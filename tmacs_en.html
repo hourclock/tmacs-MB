@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<title>tmacs[MB]</title>
+	<script type="text/javascript" src="js/import.js"></script>
+	<!-- 必要なjsファイルをインポート -->
+	<!-- <script src="js/polyfill.min.js"></script>
+	<link rel="stylesheet" href="css/bootstrap.css" type="text/css">
+	<script src="js/jquery-3.3.1.min.js"></script>
+	<script src="js/popper.js"></script>
+	<script src="js/bootstrap.js"></script>
+	<link rel="stylesheet" href="css/jquery.bootstrap-touchspin.css">
+	<script src="js/jquery.bootstrap-touchspin.js"></script>
+	<link href="css/bootstrap-toggle.min.css" rel="stylesheet">
+	<script src="js/bootstrap-toggle.min.js"></script>
+	<link href="css/ol.css" rel="stylesheet">
+	<script src="js/ol.js"></script>
+	<script src="js/canvas-toBlob.js"></script>
+	<script src="js/FileSaver.min.js"></script>
+	<script src="js/svg.js"></script>
+	<link rel="stylesheet" href="css/for_printer.css" media="print" type="text/css">
+	<link rel="stylesheet" href="css/default.css" type="text/css">
+	<script src="js/ol-hash.js"></script>
+
+	<script src="https://d3js.org/d3.v4.min.js"></script>
+	<script src="https://d3js.org/d3-tile.v0.0.min.js"></script>
+	<script src="https://map.yahooapis.jp/js/V1/jsapi?appid=dj00aiZpPW91S0QwaElwdWRUcSZzPWNvbnN1bWVyc2VjcmV0Jng9ZWM-" type="text/javascript"  charset="UTF-8" ></script>
+
+	<script src="ol-gsi2geojson.js"></script>
+	<script src="ol-mapbox2geojson.js"></script> -->
+
+
+
+
+	<style>
+		body {
+			padding: 0; margin: 0;
+			-webkit-print-color-adjust: exact;
+		}
+		input[type=button] {
+			display: none;  /* ラジオボタンを非表示にする */
+		}
+		input[type=radio] {
+			display: none; /* <LABEL>で枠全体に機能を持たせるためボタンを非表示 */
+		}
+		/*地図部分の設定*/
+		#map {
+			height: 600px;
+			/*width: 100%;*/
+			width:849px;
+			max-width:849px;
+			background-color: #ffffff;
+		}
+		/*ダウンロード系の非表示*/
+		#svg_include{
+			display:none;
+		}
+		#download_svg{
+			display: none;
+		}
+		#svg_export{
+			display: none;
+		}
+		/*目盛り用のcss-grid-container*/
+		#grid-container{
+			max-width:849px;
+			display:grid;
+			grid-template-columns:5mm 1fr 5mm;
+			grid-template-rows:5mm 1fr 5mm;
+			grid-template-areas:
+				"topleft     toparea      topright"
+				"centerleft  map          centerright"
+				"bottomleft  bottomarea   bottomright";
+		}
+		#topleft{
+			grid-area: topleft;
+		}
+		#top{
+			grid-area: toparea;
+			background:
+					repeating-linear-gradient(to right, black 0mm, black 2mm, transparent 1mm, transparent) ;
+			background-size: calc(100%/3) 100% ;
+			border-right: 1mm solid #000000;
+			/*border-bottom: 1mm solid #000000;*/
+		}
+		#topright{
+			grid-area: topright;
+		}
+		#left{
+			grid-area: centerleft;
+			background:
+					repeating-linear-gradient(to top, black 0mm, black 2mm, transparent 1mm, transparent) ;
+			background-size: 100% calc(100%/3) ;
+			border-top: 1mm solid #000000;
+			/*border-right: 1mm solid #000000;*/
+		}
+		#map{
+			grid-area: map;
+			border:"";
+		}
+		#right{
+			grid-area: centerright;
+			background:
+					repeating-linear-gradient(to bottom, black 0mm, black 2mm, transparent 1mm, transparent) ;
+			background-size: 100% calc(100%/3) ;
+			border-bottom: 1mm solid #000000;
+			/*border-left: 1mm solid #000000;*/
+		}
+		#bottomleft{
+			grid-area: bottomleft;
+		}
+		#bottom{
+			grid-area: bottomarea;
+			background:
+					repeating-linear-gradient(to left, black 0mm, black 2mm, transparent 1mm, transparent) ;
+			background-size: calc(100%/3) 100% ;
+			border-left: 1mm solid #000000;
+			/*border-top: 1mm solid #000000;*/
+		}
+		#bottomright{
+			grid-area: bottomright;
+		}
+		/*@page { size: A4 landscape; }*/
+	</style>
+</head>
+
+<body>
+	<div class="container-fluid">
+		<!--上部-->
+		<div class="noprint">
+			<div class="info"><!-- tmacs自体の説明 -->
+				<h1><a href="tmacs_en.html"><img src="images/logo.png" alt="tmacs"></a></h1>
+				<p align="right">
+					<a href="tmacs_ja.html"><u>日本語</u></a>
+					<a href="tmacs_en.html"><u>English</u></a>
+				</p>
+				<br>
+				<div class="panel panel-primary">
+					<div class="panel-heading">
+						<h2>About tmacs</h2>
+					</div>
+					<div class="panel-body">
+						<p align="left">
+						"tmacs" is a web-based tactile map automated creation system.<br> Users simply type in an address or the name of a building and the system instantly creates an image of a tactile map, which is then printed on capsule paper and raised up by a heater.
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- 中部 -->
+		<div class="main">
+			<div class="row">
+				<div class="col-md-1"></div>
+				<div class="col-md-6">
+					<div  class="row">
+						<div id="map-row" class="col-md-12">
+								<div id="grid-container">
+									<div id="topleft" class="display"></div>
+									<div id="top" class="display"></div>
+									<div id="topright" class="display"></div>
+									<div id="left" class="display"></div>
+									<div id="map" class="map"></div>
+									<div id="right" class="display"></div>
+									<div id="bottomleft" class="display"></div>
+									<div id="bottom" class="display"></div>
+									<div id="bottomright" class="display"></div>
+								</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- 設定パネル -->
+				<div class="col-md-4">
+					<div class="noprint">
+						<div class="row">
+							<div class="col-md-12">
+								<div class="panel panel-primary">
+									<div class="panel-heading">Control Panel</div>
+									<div class="panel-body">
+										<table class="table">
+											<tbody>
+												<tr>
+													<td>
+														<label>Location</label>
+													</td>
+													<td class="text-left">
+														<div class="input-group">
+															<input type="text" class="form-control" id="addr" placeholder="Addrress here">
+															<span class="input-group-btn">
+																<button class="btn btn-default" type="button" onclick="getJSON()">SEARCH</button>
+															</span>
+														</div>
+														<div id="place">
+															<label class="btn btn-primary "><input type="button" onclick="myplace()"> Current location</label>
+														</div>
+													</td>
+												</tr>
+												<tr>
+													<td>
+														<label>Background Map Image</label>
+													</td>
+													<td class="text-left">
+														<div id="basemap" class="btn-group" data-toggle="buttons">
+															<label class="btn btn-primary "><input type="radio" name="options" autocomplete="off" value="bing"> Bing</label>
+															<label class="btn btn-primary active"><input type="radio" name="options" autocomplete="off" value="osm"> OSM</label>
+															<label class="btn btn-primary"><input type="radio" name="options" autocomplete="off" value="gsi"> GSI</label>
+															<label class="btn btn-primary"><input type="radio" name="options" autocomplete="off" value="none"> None</label>
+														</div>
+													</td>
+												</tr>
+												<tr>
+													<td>
+														<label>Transparency of the Background Map</label>
+													</td>
+													<td class="text-left">
+														<div class="input-group bootstrap-touchspin">
+															<span class="input-group-addon bootstrap-touchspin-prefix" style="display: none;"></span>
+															<input id="opacity_input" type="text" value="50" name="opacity" class="form-control" style="display: block;">
+															<span class="input-group-addon bootstrap-touchspin-postfix" style="display: none;"></span>
+														</div>
+													</td>
+												</tr>
+												<tr>
+													<td>
+														<label>Tactile Map Source</label>
+													</td>
+													<td class="text-left">
+														<div id="tactile" class="btn-group" data-toggle="buttons">
+															<!-- <label class="btn btn-primary active"><input type="radio" name="options" autocomplete="off" value="osm"> OSM</label> -->
+															<label class="btn btn-primary active"><input type="radio" name="options" autocomplete="off" value="mapbox"> Mapbox</label>
+															<label class="btn btn-primary"><input type="radio" name="options" autocomplete="off" value="gsi"> GSI</label>
+															<label class="btn btn-primary"><input type="radio" name="options" autocomplete="off" value="none"> None</label>
+														</div>
+													</td>
+												</tr>
+												<tr id="tactile-table">
+													<td>
+														<label>Layer</label>
+													</td>
+													<td class="text-left">
+														<div id="tactile-group" >
+															<input id="tactile-water" type="checkbox" checked data-toggle="toggle" data-size="normal" value="water" data-on="Water" data-off="Water" >
+															<input id="tactile-railway" type="checkbox" checked data-toggle="toggle" data-size="normal" value="rail" data-on="Rail" data-off="Rail" >
+															<input id="tactile-road" type="checkbox" checked data-toggle="toggle" data-size="normal" value="road" data-on="Road" data-off="Road" >
+														</div>
+													</td>
+												</tr>
+												<tr>
+													<td>
+														<label>Angle of rotation</label>
+													</td>
+													<td class="text-left">
+														<div class="input-group bootstrap-touchspin">
+															<span class="input-group-addon bootstrap-touchspin-prefix" style="display: none;"></span>
+															<input id="rotate_input" type="text" value="0" name="rotate" class="form-control" style="display: block;">
+															<span class="input-group-addon bootstrap-touchspin-postfix" style="display: none;"></span>
+														</div>
+													</td>
+												</tr>
+												<tr>
+													<td>
+														<label>Scale Ratio</label>
+													</td>
+													<td class="text-left">
+														<div class="input-group bootstrap-touchspin">
+															<span class="input-group-addon bootstrap-touchspin-prefix" style="display: none;"></span>
+															<input id="scale_input" type="text" value="17" name="scale" class="form-control" style="display: block;">
+															<span class="input-group-addon bootstrap-touchspin-postfix" style="display: none;"></span>
+														</div>
+													</td>
+												</tr>
+												<tr id=append-table>
+													<td>
+														<label>Scale Division</label>
+													</td>
+													<td class="text-left">
+														<div>
+															<input id="append-check" type="checkbox" data-toggle="toggle" data-size="normal">
+														</div>
+													</td>
+												</tr>
+												<tr id="append-grid" class="display">
+													<td>
+														<label>Number of scale / Frame</label>
+													</td>
+													<td class="text-left">
+														<div id="grid" class="btn-group" data-toggle="buttons">
+															<label class="btn btn-primary"><input type="button" value="2">2×3</input></label>
+															<label class="btn btn-primary"><input type="button" value="3">3×4</input></label>
+															<label class="btn btn-primary"><input type="button" value="4">4×5</input></label>
+															<label class="btn btn-primary"><input type="button" value="5">5×6</input></label>
+															<label class="btn btn-primary"><input type="button" value="frame-on">With flame</input></label>
+															<label class="btn btn-primary"><input type="button" value="frame-off">No flame</input></label>
+														</div>
+													</td>
+												</tr>
+											</tbody>
+										</table>
+									</div>
+								</div>
+							</div>
+
+							<!-- 保存パネル -->
+							<div class="col-md-12">
+								<div class="panel panel-primary">
+									<div class="panel-heading">Output</div>
+									<div class="panel-body">
+										<table class="table">
+											<tbody>
+												<tr>
+													<td>
+														<label>Format</label>
+													</td>
+													<td class="text-left">
+														<div id="output" class="btn-group" data-toggle="buttons">
+															<label class="btn btn-primary"><input type="button" value="print">Print</input></label>
+															<label class="btn btn-primary"><input type="button" value="png">PNG</input></label>
+															<label class="btn btn-primary disabled"><input type="button" value="svg">SVG</input></label>
+														</div>
+													</td>
+												</tr>
+											</tbody>
+										</table>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-1"></div>
+			</div>
+		</div>
+
+		<!-- 下部 -->
+		<div class="noprint">
+			<div class="info"><br>
+				<div class="panel panel-primary">
+					<div class="panel-heading">
+						<h2 class="panel-title">Usage</h2>
+					</div>
+					<div class="panel-body">
+						<p align="left">
+							Select the background maps from four types or none.
+						</p>
+						<dl class="dl-horizontal" align="left">
+							<dt>Bing</dt>
+							<dd>BING Map data. (Default)</dd>
+							<dt>OSM</dt><dd>OpenStreetMap data.</dd>
+							<dt>GSI</dt><dd>Japan Geographical Survey Institute map data.</dd>
+						</dl>
+						<p align="left">
+							Transmittance of the background map can be changed in 100 steps from 0 to 100%. (default = 50) Adjust the transmittance so as not to disturb the tactile map.<br>
+							Angle of rotation can be changed in 360 steps from -180 to 180 degree. (default = 0) <br>
+							The scale ratio can be changed in 10 steps from 10 to 19. (default = 16)
+						</p>
+					</div>
+				</div>
+			</div>
+			<!-- フッター -->
+			<footer class="noprint"><p>&copy 2018 Watanabe Laboratory, Niigata Univ.</p></footer>
+		</div><!-- noprint -->
+
+		<!-- SVG出力用（非表示） -->
+		<div class="noprint">
+			<div id="svg_include"></div>
+			<div id="download_svg">
+				<svg id="svg_canvas" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="800pt" height="600pt" viewBox="0 0 800 600" version="1.1">
+					<image id="background" xlink:href="" x="0" y="0" height="600" weight="800"></image>
+				</svg>
+			</div>
+			<div id="svg_export" class="chartcontainer"></div>
+		</div>
+	</div>
+
+	<script type="text/javascript" src="js/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+.noprint{display:none;}
+#map-row{
+	display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#grid-container{
+	width:100px;
+	height:100px;
+}
+/*.container{margin-top:20px;}
+.row{display: flex;
+  justify-content: center;
+  align-items: center;}
+.mapWrapper{
+height:$("#map").height(); width:$("#map").width();
+display: flex;
+  justify-content: center;
+  align-items: center;}
+#grid-container{height:100%; width:100%; transform: scale(1); margin:0 auto;}
+@page { size: A4 landscape; }
+.Chrome body{width:100% !important; margin-left:-100 !important; padding:5 !important;}*/

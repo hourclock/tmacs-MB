@@ -1,0 +1,18 @@
+body {padding: 0; margin: 0}
+		input[type=button] {
+			display: none;  /* ラジオボタンを非表示にする */
+		}
+		input[type=radio] {
+			display: none; /* <LABEL>で枠全体に機能を持たせるためボタンを非表示 */
+		}
+		#map {
+			height: 600px;
+			width: 100%;
+			background-color: #ffffff;
+		}
+		#svg_include{
+			display:none;
+		}
+		#download_svg{
+			display: none;
+		}
