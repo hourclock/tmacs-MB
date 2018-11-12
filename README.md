@@ -1,2 +1,2 @@
 # tmacs-MB
-tactile map creation system
+An tactile map automated creation system.
