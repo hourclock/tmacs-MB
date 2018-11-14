@@ -30,9 +30,9 @@ let gsi_base = new ol.layer.Tile({
 //---------------------------------------------------------------------------------------------------------------------
 //触地図レイヤ-----------------------------------------------------------------------------------------------------------
 //国土地理院ベクトルタイル
-var temp=new Array();
+let temp = new Array();
 //道路
-var gsi_road = new ol.layer.VectorTile({
+let gsi_road = new ol.layer.VectorTile({
 	source: new ol.source.VectorTile({
 		format: new ol.format.GeoJSON(),
 		projection: 'EPSG:4326',
@@ -78,7 +78,7 @@ var gsi_road = new ol.layer.VectorTile({
 });
 
 //鉄道
-var gsi_rail = new ol.layer.VectorTile({
+let gsi_rail = new ol.layer.VectorTile({
 	source: new ol.source.VectorTile({
 		format: new ol.format.GeoJSON(),
 		projection: 'EPSG:3857',
@@ -96,7 +96,7 @@ var gsi_rail = new ol.layer.VectorTile({
 });
 
 //河川
-var gsi_water = new ol.layer.VectorTile({
+let gsi_water = new ol.layer.VectorTile({
 	source: new ol.source.VectorTile({
 		format: new ol.format.GeoJSON(),
 		projection: 'EPSG:3857',
@@ -110,9 +110,9 @@ var gsi_water = new ol.layer.VectorTile({
 					color: 'black',
 					width: 10,
 					lineCap:"round",
-					lineDash:[.5,15],
+					lineDash:[0.5,15],
 				})
-			})
+			});
 		}else{
 			return new ol.style.Style({
 				stroke: new ol.style.Stroke({
@@ -120,7 +120,7 @@ var gsi_water = new ol.layer.VectorTile({
 					width: 0,
 					lineCap: "butt",
 				})
-			})
+			});
 		}
 	}
 });
@@ -290,8 +290,8 @@ let map = new ol.Map({
 
 function createdataurl(){
 	for(layer in Status.switch){
-		if(Status["switch"][layer]=="ON"){
-			map.removeLayer(Layers["tactile"][Status.tactile][layer]);
+		if(Status.switch[layer]=="ON"){
+			map.removeLayer(Layers.tactile[Status.tactile][layer]);
 		}
 	}
 	map.renderSync();
@@ -301,7 +301,7 @@ function createdataurl(){
 	let base_url=canvas_base.toDataURL();//画像URL化
 	for(layer in Status["switch"]){
 		if(Status["switch"][layer]=="ON"){
-			map.addLayer(Layers["tactile"][Status.tactile][layer]);
+			map.addLayer(Layers.tactile[Status.tactile][layer]);
 		}
 	}
 	return base_url;
@@ -311,30 +311,30 @@ function createsvg(){
 	$("#svg_export").empty();
 			let width = $("#map").width();
 			let height = $("#map").height();
-			var pi = Math.PI;
-			var tau = 2 * pi;
+			let pi = Math.PI;
+			let tau = 2 * pi;
 
 			// 表示するズームレベルとタイルを取得するズームレベルを別個に定義
-			var zoom = {view: map.getView().getZoom(), tile: 16};
+			let zoom = {view: map.getView().getZoom(), tile: 16};
 
-			var center = ol.proj.transform(map.getView().getCenter(),"EPSG:3857","EPSG:4326");
+			let center = ol.proj.transform(map.getView().getCenter(),"EPSG:3857","EPSG:4326");
 			// var center =  [140.461321, 36.374950];
 
 			// ズームレベルの差をdzとすると、2^dzを変数magで定義
 			// 今回の場合は2^(16-14)=2^2=4となる
-			var mag = Math.pow(2, zoom.tile - zoom.view);
+			let mag = Math.pow(2, zoom.tile - zoom.view);
 
 			// projectionのスケールは表示するズームレベルを指定
-			var projection = d3.geoMercator()
+			let projection = d3.geoMercator()
 				.center(center)
 				.scale(256 * Math.pow(2, zoom.view) / tau)
 				.translate([width / 2, height / 2]);
 
-			var path = d3.geoPath()
+			let path = d3.geoPath()
 				.projection(projection);
 
 			// d3.tile()のサイズにmagを掛ける
-			var tile = d3.tile()
+			let tile = d3.tile()
 				.size([width * mag, height * mag]);
 
 			let bbox ="0 0 "+width+" "+height;
@@ -367,7 +367,7 @@ function createsvg(){
 				.attr("class","tile")
 				.each(function(d) {
 					// このgが各タイル座標となる
-					var g = d3.select(this);
+					let g = d3.select(this);
 					d3.json("http://cyberjapandata.gsi.go.jp/xyz/experimental_rdcl/" + d[2] + "/" + d[0] + "/" + d[1] + ".geojson", function(error, json) {
 						if (error) throw error;
 						g.selectAll(".road")
@@ -438,8 +438,8 @@ LayersSet();
 
 //クラスの表示・非表示を制御する関数
 function divdisplay(classname,state){
-	var contents = document.getElementsByClassName(classname);
-	for(var i = 0; i < contents.length; i++) {
+	let contents = document.getElementsByClassName(classname);
+	for(let i = 0; i < contents.length; i++) {
 		contents[i].style.display = state;
 	}
 }
