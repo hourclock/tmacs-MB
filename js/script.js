@@ -307,7 +307,7 @@ function createdataurl(){
 	return base_url;
 }
 
-function createsvg(){
+function gsicreatesvg(){
 	$("#svg_export").empty();
 			let width = $("#map").width();
 			let height = $("#map").height();
@@ -383,12 +383,98 @@ function createsvg(){
 				});
 }
 
+function mapboxcreatesvg(){
+	var vt2geojson = require('@mapbox/vt2geojson');
+	$("#svg_export").empty();
+			let width = $("#map").width();
+			let height = $("#map").height();
+			let pi = Math.PI;
+			let tau = 2 * pi;
+
+			// 表示するズームレベルとタイルを取得するズームレベルを別個に定義
+			let zoom = {view: map.getView().getZoom(), tile: 16};
+
+			let center = ol.proj.transform(map.getView().getCenter(),"EPSG:3857","EPSG:4326");
+			// var center =  [140.461321, 36.374950];
+
+			// ズームレベルの差をdzとすると、2^dzを変数magで定義
+			// 今回の場合は2^(16-14)=2^2=4となる
+			let mag = Math.pow(2, zoom.tile - zoom.view);
+
+			// projectionのスケールは表示するズームレベルを指定
+			let projection = d3.geoMercator()
+				.center(center)
+				.scale(256 * Math.pow(2, zoom.view) / tau)
+				.translate([width / 2, height / 2]);
+
+			let path = d3.geoPath()
+				.projection(projection);
+
+			// d3.tile()のサイズにmagを掛ける
+			let tile = d3.tile()
+				.size([width * mag, height * mag]);
+
+			let bbox ="0 0 "+width+" "+height;
+			let map_svg = d3.select(".chartcontainer").append("svg")
+					.attr("class", "map")
+					.attr("width", width)
+					.attr("height", height)
+					.attr("xmlns","http://www.w3.org/2000/svg")
+					.attr("xmlns:xlink","http://www.w3.org/1999/xlink")
+					.attr("viewBox",bbox);
+
+			map_svg.append("image")
+						.attr("id","svg_image");
+
+
+			// geojsonファイルの属性からclassを与える関数
+			function roadClass(prop) {
+				return prop == "国道" ? "nation" :
+					prop == "都道府県道" ? "pref" :
+					prop == "高速自動車国道等" ? "highway" : "minor";
+			}
+
+			map_svg.selectAll(".tile")
+				.data(tile
+					.scale(projection.scale() * tau * mag) // magを掛ける
+					.translate(projection([0, 0])
+					.map(function(v){return v * mag;}))) //magを掛ける
+				.enter()
+				.append("g")
+				.attr("class","tile")
+				.each(function(d) {
+					// このgが各タイル座標となる
+					let g = d3.select(this);
+					// d3.json("http://cyberjapandata.gsi.go.jp/xyz/experimental_rdcl/" + d[2] + "/" + d[0] + "/" + d[1] + ".geojson", function(error, json) {
+						// if (error) throw error;
+					vt2geojson({
+						uri: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/' +'{z}/{x}/{y}.vector.pbf?access_token=' + key,
+						layer: 'road'
+					}, function (err, result) {
+						if (err) throw err;
+						console.log(result); // => GeoJSON FeatureCollection
+						g.selectAll(".road")
+							.data(result.features) // 小さい道路をフィルタリング（任意）
+							.enter()
+							.append("path")
+							.attr("d", path)
+							.attr("fill", "none")
+							.attr("stroke", "rgb(0%,0%,0%)")
+							.attr("stroke-opacity","1")
+							.attr("stroke-width","3");
+					});
+				});
+}
 //小数点ズーム
 map.on("moveend",
 	function(){
 		$("#scale_input").val(map.getView().getZoom());
 		$("#rotate_input").val(Math.round(map.getView().getRotation()*180/Math.PI));
-		createsvg();
+		if(Status.tactile=="gsi"){
+			gsicreatesvg();
+		}else if(Status.tactile=="mapbox"){
+			mapboxcreatesvg();
+		}
 	}
 );
 
@@ -942,6 +1028,8 @@ $(function(){
 			}else{
 				saveAs(blob,"tmacs.svg");
 			}
+		}else if(this.value=="mapbox"){
+
 		}
 	});
 });
