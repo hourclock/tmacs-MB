@@ -134,7 +134,6 @@ let mapbox_road = new ol.layer.VectorTile({
 	style:function(feature,resolution){
 		let color = "#00000000";
 		let width = 0;
-		temp_mapbox.push(feature);
 		if(map.getView().getZoom()>=16){
 			if(feature.get("class")=="street"||feature.get("class")=="track"||feature.get("class")=="link"||feature.get("class")=="street_limited"||feature.get("class")=="service"){
 				color="black";
@@ -454,7 +453,7 @@ function mapboxcreatesvg(){
 		});
 }
 //小数点ズーム
-map.on("change",
+map.on("moveend",
 	function(){
 		$("#scale_input").val(map.getView().getZoom());
 		$("#rotate_input").val(Math.round(map.getView().getRotation()*180/Math.PI));
@@ -730,8 +729,8 @@ $(function(){
 
 
 			if(Status.tactile=="gsi"){//-----------------------------------------------------------------------------------------------
-				console.log(gsi2geojson(temp))
-				let json_obj=JSON.parse(gsi2geojson(temp));
+				// console.log(gsi2geojson(temp))
+				// let json_obj=JSON.parse(gsi2geojson(temp));
 
 				width = $("#map").width();
 				height = $("#map").height();
