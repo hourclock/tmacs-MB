@@ -24,7 +24,7 @@ body {
 			display: none;
 		}
 		#svg_export{
-			/*display: none;*/
+			display: none;
 		}
 		/*目盛り用のcss-grid-container*/
 		#grid-container{
