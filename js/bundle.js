@@ -72910,27 +72910,27 @@ let gsi_road = new ol.layer.VectorTile({
 		tileGrid: new ol.tilegrid.createXYZ({minZoom: 16, maxZoom: 16}),
 		url: 'http://cyberjapandata.gsi.go.jp/xyz/experimental_rdcl/{z}/{x}/{y}.geojson',
 	}),
-	style: function(feature, resolution) {
+	style: function(feature) {
 		let color="black";
 		let width,lineCap;
 		if(feature.get('rdCtg') == "国道" || feature.get('rdCtg') == "都道府県道"){
 			width=8;
 		}else if(feature.get('rdCtg')== "高速自動車国道等"){
-			if(map.getView().getZoom()>14){
+			if(map.getView().getZoom()>=14){
 				width=5;
 			}else{
 				color="#00000000";
 				width=0;
 			}
 		}else if(feature.get('rnkWidth')== "5.5m-13m未満"||feature.get('rnkWidth')== "13m-19.5m未満"){
-			if(map.getView().getZoom()>14){
+			if(map.getView().getZoom()>=14){
 				width=5;
 			}else{
 				color="#00000000";
 				width=0;
 			}
 		}else{
-			if(map.getView().getZoom()>16){
+			if(map.getView().getZoom()>=16){
 				width=5;
 			}
 		}
@@ -73121,7 +73121,7 @@ let mapbox_water = new ol.layer.VectorTile({
 //初期位置
 let defaultCenter = [138.9374791, 37.8646316];	//新潟大学
 //let defaultCenter = [140.622944, 42.841269];	//ニセコ
-// let defaultCenter= [126.6461628, 37.3891199];	//Songdo Convensia
+//let defaultCenter= [126.6461628, 37.3891199];	//Songdo Convensia
 
 //表示設定
 let view = new ol.View({
@@ -73177,7 +73177,6 @@ function gsicreatesvg(){
 	let zoom = {view: map.getView().getZoom(), tile: 16};
 
 	let center = ol.proj.transform(map.getView().getCenter(),"EPSG:3857","EPSG:4326");
-	// var center =  [140.461321, 36.374950];
 
 	// ズームレベルの差をdzとすると、2^dzを変数magで定義
 	// 今回の場合は2^(16-14)=2^2=4となる
@@ -73207,43 +73206,51 @@ function gsicreatesvg(){
 
 	map_svg.append("image")
 				.attr("id","svg_image");
-
-
-	// geojsonファイルの属性からclassを与える関数
-	function roadClass(prop) {
-		return prop == "国道" ? "nation" :
-			prop == "都道府県道" ? "pref" :
-			prop == "高速自動車国道等" ? "highway" : "minor";
-	}
-
 	map_svg.selectAll(".tile")
 		.data(tile
 			.scale(projection.scale() * tau * mag) // magを掛ける
-			.translate(projection([0, 0])
-			.map(function(v){return v * mag;}))) //magを掛ける
+			.translate(
+				projection([0, 0])
+				.map(
+					function(v){return v * mag;}
+				)
+			)
+		) //magを掛ける
 		.enter()
 		.append("g")
 		.attr("class","tile")
+		.attr("fill", "none")
+		.attr("stroke", "rgb(0%,0%,0%)")
+		.attr("stroke-opacity","1")
+		.attr("stroke-width","3")
 		.each(function(d) {
 			// このgが各タイル座標となる
 			let g = d3.select(this);
 			d3.json("http://cyberjapandata.gsi.go.jp/xyz/experimental_rdcl/" + d[2] + "/" + d[0] + "/" + d[1] + ".geojson", function(error, json) {
 				if (error) throw error;
 				g.selectAll(".road")
-					.data(json.features) // 小さい道路をフィルタリング（任意）
+					.data(json.features.filter(
+						function(feature){
+							if(map.getView().getZoom()>=16){
+								return true
+							}else if(16>map.getView().getZoom()&&map.getView().getZoom()>=14){
+								return feature.properties.rdCtg == "国道"||feature.properties.rdCtg=="都道府県道"||feature.properties.rdCtg=="高速自動車国道等"||feature.properties.rnkWidth=="5.5m-13m未満"||feature.properties.rnkWidth=="13m-19.5m未満";
+							}else if(14>map.getView().getZoom()&&map.getView().getZoom()>=12){
+								return feature.properties.rdCtg == "国道"||feature.properties.rdCtg=="都道府県道"||feature.properties.rdCtg=="高速自動車国道等";
+							}else{
+								return feature.properties.rdCtg == "国道"||feature.properties.rdCtg=="都道府県道";
+							}
+						}
+					))
 					.enter()
 					.append("path")
-					.attr("d", path)
-					.attr("fill", "none")
-					.attr("stroke", "rgb(0%,0%,0%)")
-					.attr("stroke-opacity","1")
-					.attr("stroke-width","3");
+					.attr("d", path);
 			});
 		});
 }
 
 function mapboxcreatesvg(){
-	var vt2geojson = require('C:/Users/NEC-PCuser/AppData/Roaming/npm/node_modules/@mapbox/vt2geojson');
+	var vt2geojson = require('../../../AppData/Roaming/npm/node_modules/@mapbox/vt2geojson');
 	$("#svg_export").empty();
 	let width = $("#map").width();
 	let height = $("#map").height();
@@ -73254,7 +73261,6 @@ function mapboxcreatesvg(){
 	let zoom = {view: map.getView().getZoom(), tile: 16};
 
 	let center = ol.proj.transform(map.getView().getCenter(),"EPSG:3857","EPSG:4326");
-	// var center =  [140.461321, 36.374950];
 
 	// ズームレベルの差をdzとすると、2^dzを変数magで定義
 	// 今回の場合は2^(16-14)=2^2=4となる
@@ -73284,23 +73290,23 @@ function mapboxcreatesvg(){
 
 	map_svg.append("image")
 				.attr("id","svg_image");
-
-
-	// geojsonファイルの属性からclassを与える関数
-	function roadClass(prop) {
-		return prop == "国道" ? "nation" :
-			prop == "都道府県道" ? "pref" :
-			prop == "高速自動車国道等" ? "highway" : "minor";
-	}
-
 	map_svg.selectAll(".tile")
 		.data(tile
 			.scale(projection.scale() * tau * mag) // magを掛ける
-			.translate(projection([0, 0])
-			.map(function(v){return v * mag;}))) //magを掛ける
+			.translate(
+				projection([0, 0])
+				.map(
+					function(v){return v * mag;}
+				)
+			)
+		) //magを掛ける
 		.enter()
 		.append("g")
 		.attr("class","tile")
+		.attr("fill", "none")
+		.attr("stroke", "rgb(0%,0%,0%)")
+		.attr("stroke-opacity","1")
+		.attr("stroke-width","3")
 		.each(function(d) {
 			// このgが各タイル座標となる
 			let g = d3.select(this);
@@ -73311,18 +73317,22 @@ function mapboxcreatesvg(){
 				if (err) throw err;
 				console.log(result); // => GeoJSON FeatureCollection
 				g.selectAll(".road")
-					.data(result.features) // 小さい道路をフィルタリング（任意）
+					.data(result.features.filter(function(feature){
+						if(map.getView().getZoom()>=16){
+							return feature.properties.class=="street"||feature.properties.class=="track"||feature.properties.class=="link"||feature.properties.class=="street_limited"||feature.properties.class=="service"||feature.properties.class=="secondary"||feature.properties.class=="trunk"||feature.properties.class=="primary"||feature.properties.class=="tertiary"||feature.properties.class=="motorway";
+						}else if(16>map.getView().getZoom()||map.getView().getZoom()>=13){
+							return feature.properties.class=="secondary"||feature.properties.class=="trunk"||feature.properties.class=="primary"||feature.properties.class=="tertiary"||feature.properties.class=="motorway";
+						}else if(13>map.getView().getZoom()||map.getView().getZoom()>=10){
+							return feature.properties.class=="motorway";
+						}
+					}))
 					.enter()
 					.append("path")
-					.attr("d", path)
-					.attr("fill", "none")
-					.attr("stroke", "rgb(0%,0%,0%)")
-					.attr("stroke-opacity","1")
-					.attr("stroke-width","3");
+					.attr("d", path);
 			});
 		});
 }
-//小数点ズーム
+
 map.on("moveend",
 	function(){
 		$("#scale_input").val(map.getView().getZoom());
@@ -73355,7 +73365,7 @@ let Status = {
 	}
 };
 
-//レイヤのON・OFFを制御する関数
+//レイヤの制御関数
 function LayersSet(){
 	for(base in Layers.base){//全ての背景画像を削除
 		map.removeLayer(Layers.base[base]);
@@ -73470,6 +73480,11 @@ $(function() {
 		Status["tactile"]=this.value;
 		document.getElementById("tactile-table").style.display=(Status["tactile"]=="none")?'none':'';
 		LayersSet();
+		if(Status.tactile=="gsi"){
+			gsicreatesvg();
+		}else if(Status.tactile=="mapbox"){
+			mapboxcreatesvg();
+		}
 		console.log("CHANGE BASE LAYER:"+this.value);
 	});
 });
@@ -73558,7 +73573,7 @@ $(function() {
 //保存---------------------------------------------------------------------------------------------
 $(function(){
 	$('#output input[type=button]').change(function(){
-		//プリント=========================================================================
+		//プリント========================================================================
 		if( this.value == "print" ){
 			console.log("SAVE:PRINT");
 			$("#grid-container").height($("#map").height()+$("#topleft").height()*2);
@@ -73567,7 +73582,7 @@ $(function(){
 			$("#grid-container").height("");
 			$("#grid-container").width("");
 		//PNG出力=======================================================================
-		} else if ( this.value == "png" ){
+		}else if( this.value == "png" ){
 			console.log("SAVE:PNG");
 			map.once('rendercomplete',//レンダリング終了時、1度だけ呼び出し
 				function(event) {
@@ -73586,223 +73601,8 @@ $(function(){
 			);
 			map.render();
 		//SVG出力=======================================================================
-		// } else if (this.value == "svg"){
-		// 	console.log("SAVE:SVG");
-		// 		//範囲内の触地図レイヤーをMapServerにsvgにするようリクエスト
-
-		// 	//範囲内の背景画像をcanvasを利用して画像URL化
-		// 		for(layer in Status["switch"]){
-		// 			if(Status["switch"][layer]=="ON"){
-		// 				map.removeLayer(Layers["tactile"][Status["tactile"]][layer]);
-		// 			}
-		// 		}
-		// 		map.render();
-		// 		let canvas_base=new Image;
-		// 		canvas_base = map.renderer_.context_.canvas;
-		// 		canvas_base.crossOrigin="anonymous";
-		// 		let base_url=canvas_base.toDataURL();//画像URL化
-		// 		for(layer in Status["switch"]){
-		// 			if(Status["switch"][layer]=="ON"){
-		// 				map.addLayer(Layers["tactile"][Status["tactile"]][layer])
-		// 			}
-		// 		}
-
-
-		// 	if(Status.tactile=="gsi"){//-----------------------------------------------------------------------------------------------
-		// 		// console.log(gsi2geojson(temp))
-		// 		// let json_obj=JSON.parse(gsi2geojson(temp));
-
-		// 		width = $("#map").width();
-		// 		height = $("#map").height();
-
-		// 		let pi = Math.PI;
-		// 		let tau = 2 * pi;
-
-		// 		// 表示するズームレベルとタイルを取得するズームレベルを別個に定義
-		// 		let zoom = {view: map.getView().getZoom(), tile: 16};
-
-		// 		// ズームレベルの差をdzとすると、2^dzを変数magで定義
-		// 		// 今回の場合は2^(16-14)=2^2=4となる
-		// 		let mag = Math.pow(2, zoom.tile - zoom.view);
-
-		// 		// projectionのスケールは表示するズームレベルを指定
-		// 		let projection = d3.geoMercator()
-		// 			.center(defaultCenter)
-		// 			.scale(256 * Math.pow(2, zoom.view) / tau)
-		// 			.translate([width / 2, height / 2]);
-
-		// 		let path = d3.geoPath()
-		// 			.projection(projection);
-
-		// 		// d3.tile()のサイズにmagを掛ける
-		// 		let tile = d3.tile()
-		// 			.size([width * mag, height * mag]);
-
-		// 		let bbox ="0 0 "+width+" "+height;
-		// 		let map_svg = d3.select(".chartcontainer").append("svg")
-		// 			.attr("class", "map")
-		// 			.attr("width", width)
-		// 			.attr("height", height)
-		// 			.attr("xmlns","http://www.w3.org/2000/svg")
-		// 			.attr("xmlns:xlink","http://www.w3.org/1999/xlink")
-		// 			.attr("viewBox",bbox);
-
-		// 			map_svg.append("image")
-		// 				.attr("xlink:href",base_url)
-		// 				.attr("x","0")
-		// 				.attr("y","0")
-		// 				.attr("height",height)
-		// 				.attr("weight",width);
-
-
-
-		// 		// geojsonファイルの属性からclassを与える関数
-		// 		function roadClass(prop) {
-		// 			return prop == "国道" ? "nation" :
-		// 				prop == "都道府県道" ? "pref" :
-		// 				prop == "高速自動車国道等" ? "highway" : "minor";
-		// 		}
-
-		// 		map_svg.selectAll(".tile")
-		// 			.data(tile
-		// 				.scale(projection.scale() * tau * mag) // magを掛ける
-		// 				.translate(projection([0, 0])
-		// 					.map(function(v){
-		// 						return v * mag;
-		// 						}
-		// 					)
-		// 				)
-		// 			) //magを掛ける
-		// 			.enter()
-		// 			.append("g")
-		// 			.attr("class","tile")
-		// 			.each(function(d) {
-		// 				// このgが各タイル座標となる
-		// 				var g = d3.select(this);
-		// 				g.selectAll(".road")
-		// 					.data(json_obj.features)
-		// 					.enter()
-		// 					.append("path")
-		// 					.attr("class", function(d) {
-		// 						return "road " +roadClass(d.properties.rdCtg);
-		// 					})
-		// 					.attr("d", path)
-		// 					.attr("fill", "none")
-		// 					.attr("stroke", "rgb(0%,0%,0%)")
-		// 					.attr("stroke-opacity","1")
-		// 					.attr("stroke-width","7");
-		// 			});
-		// 		let text = $("#svg_export").html();
-		// 		let blob = new Blob([text],{type:"text/plain"});
-		// 		if(window.navigator.msSaveBlob){
-		// 			window.navigator.msSaveBlob(blob,"tmacs.svg");
-		// 		}else{
-		// 			saveAs(blob,"tmacs.svg");
-		// 		}
-			// }else if(Status.tactile=="mapbox"){//------------------------------------------------------------------------------------------------------
-			// 	//let json_obj=JSON.parse(mapbox2geojson(temp_mapbox));
-
-			// 	// JSON.parse(mapbox2geojson(temp_mapbox)).features[1].geometry.coordinates[1]
-			// 	let a,b;
-			// 	let c="off";
-			// 	let just_data=new Array();
-			// 	temp_mapbox.forEach(function(feature,index){
-			// 		feature.flatCoordinates_.forEach(function(array,number){
-			// 			if(number%2==0){
-			// 				a=array;
-			// 			}else{
-			// 				b=array;
-			// 			}
-			// 			if(map.getView().calculateExtent()[0]<=a&&a<=map.getView().calculateExtent()[2]&&map.getView().calculateExtent()[1]<=b&&b<=map.getView().calculateExtent()[3]){
-			// 					c="on";
-			// 				}
-			// 		})
-			// 		if(c=="on"){
-			// 			just_data.push(temp_mapbox[index]);
-			// 			c="off";
-			// 		}
-			// 	})
-			// 	console.log(just_data);
-			// 	let json_obj=JSON.parse(mapbox2geojson(just_data));
-
-			// 	width = $("#map").width();
-			// 	height = $("#map").height();
-
-			// 	let pi = Math.PI;
-			// 	let tau = 2 * pi;
-
-			// 	// 表示するズームレベルとタイルを取得するズームレベルを別個に定義
-			// 	let zoom = {view: map.getView().getZoom(), tile: map.getView().getZoom() };
-
-			// 	// ズームレベルの差をdzとすると、2^dzを変数magで定義
-			// 	// 今回の場合は2^(16-14)=2^2=4となる
-			// 	let mag = Math.pow(2, zoom.tile - zoom.view);
-
-			// 	// projectionのスケールは表示するズームレベルを指定
-			// 	let projection = d3.geoMercator()
-			// 		.center(defaultCenter)
-			// 		.scale(256 * Math.pow(2, zoom.view) / tau)
-			// 		.translate([width / 2, height / 2]);
-
-			// 	let path = d3.geoPath()
-			// 		.projection(projection);
-
-			// 	// d3.tile()のサイズにmagを掛ける
-			// 	let tile = d3.tile()
-			// 		.size([width * mag, height * mag]);
-
-			// 	let bbox ="0 0 "+width+" "+height;
-			// 	let map_svg = d3.select(".chartcontainer").append("svg")
-			// 		.attr("class", "map")
-			// 		.attr("width", width)
-			// 		.attr("height", height)
-			// 		.attr("xmlns","http://www.w3.org/2000/svg")
-			// 		.attr("xmlns:xlink","http://www.w3.org/1999/xlink")
-			// 		.attr("viewBox",bbox);
-
-			// 		map_svg.append("image")
-			// 			.attr("xlink:href",base_url)
-			// 			.attr("x","0")
-			// 			.attr("y","0")
-			// 			.attr("height",height)
-			// 			.attr("weight",width);
-
-
-			// 	map_svg.selectAll(".tile")
-			// 		.data(tile
-			// 			.scale(projection.scale() * tau * mag) // magを掛ける
-			// 			.translate(projection([0, 0])
-			// 				.map(function(v){
-			// 					return v * mag;
-			// 					}
-			// 				)
-			// 			)
-			// 		) //magを掛ける
-			// 		.enter()
-			// 		.append("g")
-			// 		.attr("class","tile")
-			// 		.each(function(d) {
-			// 			// このgが各タイル座標となる
-			// 			var g = d3.select(this);
-			// 			g.selectAll(".road")
-			// 				.data(json_obj.features)
-			// 				.enter()
-			// 				.append("path")
-			// 				.attr("d", path)
-			// 				.attr("fill", "none")
-			// 				.attr("stroke", "rgb(0%,0%,0%)")
-			// 				.attr("stroke-opacity","1")
-			// 				.attr("stroke-width","3");
-			// 		});
-			// 	let text = $("#svg_export").html();
-			// 	let blob = new Blob([text],{type:"text/plain"});
-			// 	if(window.navigator.msSaveBlob){
-			// 		window.navigator.msSaveBlob(blob,"tmacs.svg");
-			// 	}else{
-			// 		saveAs(blob,"tmacs.svg");
-			// 	}
-			// }
-		}else if(this.value=="svg"){
+		}else if( this.value == "svg" ){
+			console.log("SAVE:SVG")
 			let width = $("#map").width();
 			let height = $("#map").height();
 			$("#svg_image").attr("xlink:href",createdataurl())
@@ -73811,8 +73611,6 @@ $(function(){
 						.attr("height",height)
 						.attr("width",width);
 			let text = $("#svg_export").html();
-			console.log(text);
-			// let text = $(".chartcontainer").html();
 			let blob = new Blob([text],{type:"text/plain"});
 			if(window.navigator.msSaveBlob){
 				window.navigator.msSaveBlob(blob,"tmacs.svg");
@@ -73824,4 +73622,4 @@ $(function(){
 });
 
 
-},{"C:/Users/NEC-PCuser/AppData/Roaming/npm/node_modules/@mapbox/vt2geojson":1}]},{},[363]);
+},{"../../../AppData/Roaming/npm/node_modules/@mapbox/vt2geojson":1}]},{},[363]);

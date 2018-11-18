@@ -37,27 +37,27 @@ let gsi_road = new ol.layer.VectorTile({
 		tileGrid: new ol.tilegrid.createXYZ({minZoom: 16, maxZoom: 16}),
 		url: 'http://cyberjapandata.gsi.go.jp/xyz/experimental_rdcl/{z}/{x}/{y}.geojson',
 	}),
-	style: function(feature, resolution) {
+	style: function(feature) {
 		let color="black";
 		let width,lineCap;
 		if(feature.get('rdCtg') == "国道" || feature.get('rdCtg') == "都道府県道"){
 			width=8;
 		}else if(feature.get('rdCtg')== "高速自動車国道等"){
-			if(map.getView().getZoom()>14){
+			if(map.getView().getZoom()>=14){
 				width=5;
 			}else{
 				color="#00000000";
 				width=0;
 			}
 		}else if(feature.get('rnkWidth')== "5.5m-13m未満"||feature.get('rnkWidth')== "13m-19.5m未満"){
-			if(map.getView().getZoom()>14){
+			if(map.getView().getZoom()>=14){
 				width=5;
 			}else{
 				color="#00000000";
 				width=0;
 			}
 		}else{
-			if(map.getView().getZoom()>16){
+			if(map.getView().getZoom()>=16){
 				width=5;
 			}
 		}
@@ -356,7 +356,19 @@ function gsicreatesvg(){
 			d3.json("http://cyberjapandata.gsi.go.jp/xyz/experimental_rdcl/" + d[2] + "/" + d[0] + "/" + d[1] + ".geojson", function(error, json) {
 				if (error) throw error;
 				g.selectAll(".road")
-					.data(json.features)
+					.data(json.features.filter(
+						function(feature){
+							if(map.getView().getZoom()>=16){
+								return true
+							}else if(16>map.getView().getZoom()&&map.getView().getZoom()>=14){
+								return feature.properties.rdCtg == "国道"||feature.properties.rdCtg=="都道府県道"||feature.properties.rdCtg=="高速自動車国道等"||feature.properties.rnkWidth=="5.5m-13m未満"||feature.properties.rnkWidth=="13m-19.5m未満";
+							}else if(14>map.getView().getZoom()&&map.getView().getZoom()>=12){
+								return feature.properties.rdCtg == "国道"||feature.properties.rdCtg=="都道府県道"||feature.properties.rdCtg=="高速自動車国道等";
+							}else{
+								return feature.properties.rdCtg == "国道"||feature.properties.rdCtg=="都道府県道";
+							}
+						}
+					))
 					.enter()
 					.append("path")
 					.attr("d", path);
@@ -365,7 +377,7 @@ function gsicreatesvg(){
 }
 
 function mapboxcreatesvg(){
-	var vt2geojson = require('C:/Users/NEC-PCuser/AppData/Roaming/npm/node_modules/@mapbox/vt2geojson');
+	var vt2geojson = require('../../../AppData/Roaming/npm/node_modules/@mapbox/vt2geojson');
 	$("#svg_export").empty();
 	let width = $("#map").width();
 	let height = $("#map").height();
@@ -432,7 +444,15 @@ function mapboxcreatesvg(){
 				if (err) throw err;
 				console.log(result); // => GeoJSON FeatureCollection
 				g.selectAll(".road")
-					.data(result.features) // 小さい道路をフィルタリング（任意）
+					.data(result.features.filter(function(feature){
+						if(map.getView().getZoom()>=16){
+							return feature.properties.class=="street"||feature.properties.class=="track"||feature.properties.class=="link"||feature.properties.class=="street_limited"||feature.properties.class=="service"||feature.properties.class=="secondary"||feature.properties.class=="trunk"||feature.properties.class=="primary"||feature.properties.class=="tertiary"||feature.properties.class=="motorway";
+						}else if(16>map.getView().getZoom()||map.getView().getZoom()>=13){
+							return feature.properties.class=="secondary"||feature.properties.class=="trunk"||feature.properties.class=="primary"||feature.properties.class=="tertiary"||feature.properties.class=="motorway";
+						}else if(13>map.getView().getZoom()||map.getView().getZoom()>=10){
+							return feature.properties.class=="motorway";
+						}
+					}))
 					.enter()
 					.append("path")
 					.attr("d", path);
@@ -587,6 +607,11 @@ $(function() {
 		Status["tactile"]=this.value;
 		document.getElementById("tactile-table").style.display=(Status["tactile"]=="none")?'none':'';
 		LayersSet();
+		if(Status.tactile=="gsi"){
+			gsicreatesvg();
+		}else if(Status.tactile=="mapbox"){
+			mapboxcreatesvg();
+		}
 		console.log("CHANGE BASE LAYER:"+this.value);
 	});
 });
