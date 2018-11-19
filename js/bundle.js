@@ -73147,6 +73147,59 @@ let map = new ol.Map({
 	}),
 });
 
+/**
+ 文字列チェック
+ @param  input    String  チェック対象文字列
+ @param  charType String  チェック種別
+						  　・"zenkaku"               : 全角文字（ひらがな・カタカナ・漢字 etc.）
+						  　・"hiragana"              : 全角ひらがな
+						  　・"katakana"              : 全角カタカナ
+						  　・"alphanumeric"          : 半角英数字（大文字・小文字）
+						  　・"numeric"               : 半角数字
+						  　・"alphabetic"            : 半角英字（大文字・小文字）
+						  　・"upper-alphabetic"      : 半角英字（大文字のみ）
+						  　・"lower-alphabetic"      : 半角英字（小文字のみ）
+ @return Boolean チェック結果OKかどうか
+				 true  : チェックOK（引数に指定した種別の文字列のみで構成されている)
+				 false : チェックNG（引数に指定した種別以外の文字列が含まれている）
+ */
+function checkCharType(input, charType) {
+	switch (charType) {
+		// 全角文字（ひらがな・カタカナ・漢字 etc.）
+		case "zenkaku":
+			return (input.match(/^[^\x01-\x7E\xA1-\xDF]+$/)) ? true : false;
+		// 全角ひらがな
+		case "hiragana":
+			return (input.match(/^[\u3041-\u3096]+$/)) ? true : false;
+		// 全角カタカナ
+		case "katakana":
+			return (input.match(/^[\u30a1-\u30f6]+$/)) ? true : false;
+		// 半角英数字（大文字・小文字）
+		case "alphanumeric":
+			return (input.match(/^[0-9a-zA-Z]+$/)) ? true : false;
+		// 半角数字
+		case "numeric":
+			return (input.match(/^[0-9]+$/)) ? true : false;
+		// 半角英字（大文字・小文字）
+		case "alphabetic":
+			return (input.match(/^[a-zA-Z]+$/)) ? true : false;
+		// 半角英字（大文字のみ）
+		case "upper-alphabetic":
+			return (input.match(/^[A-Z]+$/)) ? true : false;
+		// 半角英字（小文字のみ）
+		case "lower-alphabetic":
+			return (input.match(/^[a-z]+$/)) ? true : false;
+	}
+	return false;
+}
+
+function zenhan(a){
+//10進数の場合
+	a = a.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s) => {
+	return String.fromCharCode(s.charCodeAt(0) - 65248);
+	});
+}
+
 function createdataurl(){
 	for(layer in Status.switch){
 		if(Status.switch[layer]=="ON"){
@@ -73223,6 +73276,7 @@ function gsicreatesvg(){
 		.attr("stroke", "rgb(0%,0%,0%)")
 		.attr("stroke-opacity","1")
 		.attr("stroke-width","3")
+		.attr("transform","rotate("+$('#rotate_input').val()+","+width/2+","+height/2+")")
 		.each(function(d) {
 			// このgが各タイル座標となる
 			let g = d3.select(this);
@@ -73307,6 +73361,7 @@ function mapboxcreatesvg(){
 		.attr("stroke", "rgb(0%,0%,0%)")
 		.attr("stroke-opacity","1")
 		.attr("stroke-width","3")
+		.attr("transform","rotate("+$('#rotate_input').val()+","+width/2+","+height/2+")")
 		.each(function(d) {
 			// このgが各タイル座標となる
 			let g = d3.select(this);
@@ -73315,7 +73370,6 @@ function mapboxcreatesvg(){
 				layer: 'road'
 			}, function (err, result) {
 				if (err) throw err;
-				console.log(result); // => GeoJSON FeatureCollection
 				g.selectAll(".road")
 					.data(result.features.filter(function(feature){
 						if(map.getView().getZoom()>=16){
@@ -73468,8 +73522,21 @@ $("input[name='opacity']").TouchSpin({
 });
 $(function() {
 	$('#opacity_input').change(function() {
-		for(base in Layers["base"])
-		Layers["base"][base].setOpacity(this.value/100);
+		if(checkCharType(this.value,"zenkaku")){
+			let num = this.value.replace(/[Ａ-Ｚａ-ｚ０-９]/g,
+				function(s){
+					return String.fromCharCode(s.charCodeAt(0) - 65248);
+				}
+			);
+			$('#opacity_input').val(num);
+			for(base in Layers["base"]){
+				Layers["base"][base].setOpacity(num/100);
+			}
+		}else{
+			for(base in Layers["base"]){
+				Layers["base"][base].setOpacity(this.value/100);
+			}
+		}
 	});
 });
 //------------------------------------------------------------------------------------------------
@@ -73519,7 +73586,17 @@ $("input[name='rotate']").TouchSpin({
 });
 $(function() {
 	$('#rotate_input').change(function() {
-		map.getView().setRotation( this.value * Math.PI / 180 );
+		if(checkCharType(this.value,"zenkaku")){
+			let num = this.value.replace(/[Ａ-Ｚａ-ｚ０-９]/g,
+				function(s){
+					return String.fromCharCode(s.charCodeAt(0) - 65248);
+				}
+			);
+			$('#rotate_input').val(num);
+			map.getView().setRotation( num * Math.PI / 180 );
+		}else{
+			map.getView().setRotation( this.value * Math.PI / 180 );
+		}
 	});
 });
 //-------------------------------------------------------------------------------------------------
@@ -73532,7 +73609,17 @@ $("input[name='scale']").TouchSpin({
 });
 $(function() {
 	$('#scale_input').change(function() {
-		map.getView().setZoom( this.value );
+		if(checkCharType(this.value,"zenkaku")){
+			let num = this.value.replace(/[Ａ-Ｚａ-ｚ０-９]/g,
+				function(s){
+					return String.fromCharCode(s.charCodeAt(0) - 65248);
+				}
+			);
+			$('#scale_input').val(num);
+			map.getView().setZoom( num );
+		}else{
+			map.getView().setZoom( this.value );
+		}
 	});
 });
 //-------------------------------------------------------------------------------------------------

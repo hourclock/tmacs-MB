@@ -20,5 +20,5 @@ document.write('<script src="https://d3js.org/d3.v4.min.js"></script>');
 document.write('<script src="https://d3js.org/d3-tile.v0.0.min.js"></script>');
 document.write('<script src="https://map.yahooapis.jp/js/V1/jsapi?appid=dj00aiZpPW91S0QwaElwdWRUcSZzPWNvbnN1bWVyc2VjcmV0Jng9ZWM-" type="text/javascript"  charset="UTF-8" ></script>');
 
-document.write('<script src="js/ol-gsi2geojson.js"></script>');
-document.write('<script src="js/ol-mapbox2geojson.js"></script>');
+// document.write('<script src="js/ol-gsi2geojson.js"></script>');
+// document.write('<script src="js/ol-mapbox2geojson.js"></script>');
