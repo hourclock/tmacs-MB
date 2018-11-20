@@ -72871,8 +72871,8 @@ function extend() {
 }
 
 },{}],363:[function(require,module,exports){
-//1. 表示するレイヤの準備========================================================================================================
-//1.1 背景レイヤ----------------------------------------------------------------------------------------------------------------
+//1. 表示するレイヤの準備
+//1.1 背景レイヤ
 //1.1.1OpenStreetMap
 let osm_base = new ol.layer.Tile({
 	source: new ol.source.OSM(),
@@ -72899,8 +72899,8 @@ let gsi_base = new ol.layer.Tile({
 	opacity:0.5,
 	}
 );
-//1.1 END---------------------------------------------------------------------------------------------------------------------
-//1.2 触地図レイヤ-----------------------------------------------------------------------------------------------------------
+//1.1 END
+//1.2 触地図レイヤ
 //1.2.1 国土地理院ベクトルタイル
 //1.2.1.1 道路
 let gsi_road = new ol.layer.VectorTile({
@@ -72943,7 +72943,6 @@ let gsi_road = new ol.layer.VectorTile({
 		})];
 	}
 });
-
 //1.2.1.2 鉄道
 let gsi_rail = new ol.layer.VectorTile({
 	source: new ol.source.VectorTile({
@@ -72961,7 +72960,6 @@ let gsi_rail = new ol.layer.VectorTile({
 		})
 	})
 });
-
 //1.2.1.3 河川
 let gsi_water = new ol.layer.VectorTile({
 	source: new ol.source.VectorTile({
@@ -73033,7 +73031,6 @@ let mapbox_road = new ol.layer.VectorTile({
 		})];
 	}
 });
-
 //1.2.2.2 鉄道
 let mapbox_rail = new ol.layer.VectorTile({
 	source: new ol.source.VectorTile({
@@ -73073,7 +73070,6 @@ let mapbox_rail = new ol.layer.VectorTile({
 		})];
 	}
 });
-
 //1.2.2.3 河川
 let mapbox_water = new ol.layer.VectorTile({
 	source: new ol.source.VectorTile({
@@ -73086,23 +73082,27 @@ let mapbox_water = new ol.layer.VectorTile({
 	style:function(feature,resolution){
 		let color="#00000000";
 		let width=0;
-		switch(map.getView().getZoom()){
-			case 19:
-				color="black";
-				width=5;
-				break;
-			case 18:
-				color="black";
-				width=5;
-				break;
-			case 17:
-				color="black";
-				width=5;
-				break;
-			// case 16:
-			// 	color="black";
-			// 	width=5;
-			// 	break;
+		// switch(map.getView().getZoom()){
+		// 	case 19:
+		// 		color="black";
+		// 		width=5;
+		// 		break;
+		// 	case 18:
+		// 		color="black";
+		// 		width=5;
+		// 		break;
+		// 	case 17:
+		// 		color="black";
+		// 		width=5;
+		// 		break;
+		// 	case 16:
+		// 		color="black";
+		// 		width=5;
+		// 		break;
+		// }
+		if(map.getView().getZoom()>=16){
+			color="black";
+			width=5;
 		}
 		return[new ol.style.Style({
 			stroke: new ol.style.Stroke({
@@ -73113,11 +73113,10 @@ let mapbox_water = new ol.layer.VectorTile({
 		})];
 	}
 });
+//1.2 END
+//1.END
 
-//1.2 END---------------------------------------------------------------------------------------------------------------------
-//1.END =====================================================================================================================
-
-//2. mapの表示=========================================================================================================
+//2. mapの表示
 //初期位置
 let defaultCenter = [138.9374791, 37.8646316];	//新潟大学
 //let defaultCenter = [140.622944, 42.841269];	//ニセコ
@@ -73146,23 +73145,22 @@ let map = new ol.Map({
 		}
 	}),
 });
+//2. END
+//3. 関数の定義
+// var checkWidth = function() {
+//     var browserWidth = $(window).width();
+//     var browserHeight= $(window).height();
 
-/**
- 文字列チェック
- @param  input    String  チェック対象文字列
- @param  charType String  チェック種別
-						  　・"zenkaku"               : 全角文字（ひらがな・カタカナ・漢字 etc.）
-						  　・"hiragana"              : 全角ひらがな
-						  　・"katakana"              : 全角カタカナ
-						  　・"alphanumeric"          : 半角英数字（大文字・小文字）
-						  　・"numeric"               : 半角数字
-						  　・"alphabetic"            : 半角英字（大文字・小文字）
-						  　・"upper-alphabetic"      : 半角英字（大文字のみ）
-						  　・"lower-alphabetic"      : 半角英字（小文字のみ）
- @return Boolean チェック結果OKかどうか
-				 true  : チェックOK（引数に指定した種別の文字列のみで構成されている)
-				 false : チェックNG（引数に指定した種別以外の文字列が含まれている）
- */
+// document.getElementById("map").style.width = browserWidth/2 + 'px';
+// document.getElementById("map").style.height = browserHeight/2 + 'px';
+// };
+
+// $(function(){
+//     checkWidth();
+//     $(window).resize(checkWidth);
+// });
+
+//文字列の種類判別
 function checkCharType(input, charType) {
 	switch (charType) {
 		// 全角文字（ひらがな・カタカナ・漢字 etc.）
@@ -73193,13 +73191,7 @@ function checkCharType(input, charType) {
 	return false;
 }
 
-function zenhan(a){
-//10進数の場合
-	a = a.replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s) => {
-	return String.fromCharCode(s.charCodeAt(0) - 65248);
-	});
-}
-
+//現在表示されている背景画像を取得DataURL化
 function createdataurl(){
 	for(layer in Status.switch){
 		if(Status.switch[layer]=="ON"){
@@ -73219,6 +73211,7 @@ function createdataurl(){
 	return base_url;
 }
 
+//GSIレイヤをSVG形式でD3で描写
 function gsicreatesvg(){
 	$("#svg_export").empty();
 	let width = $("#map").width();
@@ -73232,7 +73225,6 @@ function gsicreatesvg(){
 	let center = ol.proj.transform(map.getView().getCenter(),"EPSG:3857","EPSG:4326");
 
 	// ズームレベルの差をdzとすると、2^dzを変数magで定義
-	// 今回の場合は2^(16-14)=2^2=4となる
 	let mag = Math.pow(2, zoom.tile - zoom.view);
 
 	// projectionのスケールは表示するズームレベルを指定
@@ -73303,6 +73295,7 @@ function gsicreatesvg(){
 		});
 }
 
+//mapboxレイヤをSVG形式でD3で描写
 function mapboxcreatesvg(){
 	var vt2geojson = require('../../../AppData/Roaming/npm/node_modules/@mapbox/vt2geojson');
 	$("#svg_export").empty();
@@ -73317,7 +73310,6 @@ function mapboxcreatesvg(){
 	let center = ol.proj.transform(map.getView().getCenter(),"EPSG:3857","EPSG:4326");
 
 	// ズームレベルの差をdzとすると、2^dzを変数magで定義
-	// 今回の場合は2^(16-14)=2^2=4となる
 	let mag = Math.pow(2, zoom.tile - zoom.view);
 
 	// projectionのスケールは表示するズームレベルを指定
@@ -73387,11 +73379,12 @@ function mapboxcreatesvg(){
 		});
 }
 
+//mapの変更後に呼び出される
 map.on("moveend",
 	function(){
-		$("#scale_input").val(map.getView().getZoom());
-		$("#rotate_input").val(Math.round(map.getView().getRotation()*180/Math.PI));
-		if(Status.tactile=="gsi"){
+		$("#scale_input").val(map.getView().getZoom());//縮尺を更新
+		$("#rotate_input").val(Math.round(map.getView().getRotation()*180/Math.PI));//角度を更新
+		if(Status.tactile=="gsi"){//現在の触地図レイヤに応じてSVG出力用に描写
 			gsicreatesvg();
 		}else if(Status.tactile=="mapbox"){
 			mapboxcreatesvg();
@@ -73408,7 +73401,7 @@ let Layers={
 	}
 };
 
-//レイヤの状態を配列に格納
+//レイヤの状態を配列に格納(管理はここで一括で行う)
 let Status = {
 	base:"osm",
 	tactile:"mapbox",
@@ -73452,12 +73445,13 @@ function divdisplay(classname,state){
 
 // 設定パネルの「サイズ・枠」を非表示にしておく
 divdisplay("display","none");
-//=====================================================================================================================
-//設定パネルによる操作=====================================================================================================
-//場所-----------------------------------------------------------------------------------------------
+//2. END
+//3. 設定パネル内の動作
+//3.1 場所
 //検索機能（mapbox）
 function getJSON() {
 	let placename = document.getElementById('addr').value;
+	console.log("SERCH:"+placename);
 	var req = new XMLHttpRequest();		  // XMLHttpRequest オブジェクトを生成する
 	req.onreadystatechange = function() {		  // XMLHttpRequest オブジェクトの状態が変化した際に呼び出されるイベントハンドラ
 		if(req.readyState == 4 && req.status == 200){ // サーバーからのレスポンスが完了し、かつ、通信が正常に終了した場合
@@ -73475,8 +73469,9 @@ function getJSON() {
 	req.send(null);// 実際にサーバーへリクエストを送信
 }
 
-// //現在位置機能
-function myplace(){
+//現在位置機能
+function place(){
+	console.log("PRESENT LOCATION");
 	navigator.geolocation.getCurrentPosition(successCallback, errorCallback);
 }
 //現在位置取得が成功したら呼び出される
@@ -73493,17 +73488,17 @@ function errorCallback(error) {
 	alert("位置情報取得に失敗しました。");
 }
 $(function() {
-	$('#search input[type=button]').on("click", function() {
+	$('#search button[type=button]').on("click", function() {
 		getJSON();
 	});
 });
 $(function() {
 	$('#place input[type=button]').on("click", function() {
-		myplace();
+		place();
 	});
 });
-//-------------------------------------------------------------------------------------------------
-//背景地図------------------------------------------------------------------------------------------
+//3.1 END
+//3.2 背景地図
 //背景地図の切り替え
 $(function() {
 	$('#basemap input[type=radio]').change( function() {
@@ -73512,8 +73507,8 @@ $(function() {
 		console.log("CHANGE BASE LAYER:"+this.value);
 	});
 });
-//-------------------------------------------------------------------------------------------------
-//背景地図の透過率----------------------------------------------------------------------------------
+//3.2 END
+//3.3 背景地図の透過率
 // 背景地図の透過率
 $("input[name='opacity']").TouchSpin({
 	min: 0,
@@ -73539,8 +73534,8 @@ $(function() {
 		}
 	});
 });
-//------------------------------------------------------------------------------------------------
-//触地図------------------------------------------------------------------------------------------
+//3.3 END
+//3.4 触地図
 //触地図のon/off
 $(function() {
 	$('#tactile input[type=radio]').change(function() {
@@ -73555,8 +73550,8 @@ $(function() {
 		console.log("CHANGE BASE LAYER:"+this.value);
 	});
 });
-//-------------------------------------------------------------------------------------------------
-//レイヤー-------------------------------------------------------------------------------------------
+//3.4 END
+//3.5 レイヤ
 //触地図レイヤーのon/off(未完成)
 $(function() {
 	$('#tactile-water').change(function() {
@@ -73576,8 +73571,8 @@ $(function() {
 		LayersSet();
 	});
 });
-//-------------------------------------------------------------------------------------------------
-//角度---------------------------------------------------------------------------------------------
+//3.5 END
+//3.6 角度
 // 地図の角度
 $("input[name='rotate']").TouchSpin({
 	min: -180,
@@ -73599,8 +73594,8 @@ $(function() {
 		}
 	});
 });
-//-------------------------------------------------------------------------------------------------
-//縮尺---------------------------------------------------------------------------------------------
+//3.6 END
+//3.7 縮尺
 // 縮尺の切り替え
 $("input[name='scale']").TouchSpin({
 	min: 10,
@@ -73622,8 +73617,8 @@ $(function() {
 		}
 	});
 });
-//-------------------------------------------------------------------------------------------------
-//目盛り----------------------------------------------------------------------------------------------
+//3.7 END
+//3.8 目盛り
 //目盛りの表示・非表示
 $(function() {
 	$('#append-check').change(function() {
@@ -73656,11 +73651,11 @@ $(function() {
 		}
 	});
 });
-//-------------------------------------------------------------------------------------------------
-//保存---------------------------------------------------------------------------------------------
+//3.8 END
+//3.9 保存
 $(function(){
 	$('#output input[type=button]').change(function(){
-		//プリント========================================================================
+		//プリント
 		if( this.value == "print" ){
 			console.log("SAVE:PRINT");
 			$("#grid-container").height($("#map").height()+$("#topleft").height()*2);
@@ -73668,7 +73663,7 @@ $(function(){
 			window.print();//印刷呼び出し
 			$("#grid-container").height("");
 			$("#grid-container").width("");
-		//PNG出力=======================================================================
+		//PNG出力
 		}else if( this.value == "png" ){
 			console.log("SAVE:PNG");
 			map.once('rendercomplete',//レンダリング終了時、1度だけ呼び出し
@@ -73687,7 +73682,7 @@ $(function(){
 				}
 			);
 			map.render();
-		//SVG出力=======================================================================
+		//SVG出力
 		}else if( this.value == "svg" ){
 			console.log("SAVE:SVG")
 			let width = $("#map").width();
@@ -73707,6 +73702,7 @@ $(function(){
 		}
 	});
 });
+//3.9 END
 
 
 },{"../../../AppData/Roaming/npm/node_modules/@mapbox/vt2geojson":1}]},{},[363]);

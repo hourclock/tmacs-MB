@@ -10,10 +10,12 @@ body {
 		}
 		/*地図部分の設定*/
 		#map {
-			height: 600px;
-			/*width: 100%;*/
-			width:849px;
-			max-width:849px;
+			/*height: 600px;*/
+			width: 100%;
+			height: 100%;
+			/*height:680px;*/
+			/*width:849px;*/
+			/*max-width:849px;*/
 			background-color: #ffffff;
 		}
 		/*ダウンロード系の非表示*/
@@ -24,11 +26,12 @@ body {
 			display: none;
 		}
 		#svg_export{
-			/*display: none;*/
+			display: none;
 		}
 		/*目盛り用のcss-grid-container*/
 		#grid-container{
-			max-width:849px;
+			/*max-width:849px;*/
+			width:100%;
 			display:grid;
 			grid-template-columns:5mm 1fr 5mm;
 			grid-template-rows:5mm 1fr 5mm;
