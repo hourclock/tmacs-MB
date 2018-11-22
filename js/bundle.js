@@ -73132,6 +73132,11 @@ let view = new ol.View({
 	zoom: 16,
 	rotation: 0,
 });
+$("#map").height($(window).height()*0.8);
+$(window).resize(function(){
+	$("#map").height($(window).height()*0.8);
+	});
+
 
 //マップを<div id="map">に生成
 let map = new ol.Map({
@@ -73147,19 +73152,6 @@ let map = new ol.Map({
 });
 //2. END
 //3. 関数の定義
-// var checkWidth = function() {
-//     var browserWidth = $(window).width();
-//     var browserHeight= $(window).height();
-
-// document.getElementById("map").style.width = browserWidth/2 + 'px';
-// document.getElementById("map").style.height = browserHeight/2 + 'px';
-// };
-
-// $(function(){
-//     checkWidth();
-//     $(window).resize(checkWidth);
-// });
-
 //文字列の種類判別
 function checkCharType(input, charType) {
 	switch (charType) {
@@ -73456,6 +73448,7 @@ function getJSON() {
 	req.onreadystatechange = function() {		  // XMLHttpRequest オブジェクトの状態が変化した際に呼び出されるイベントハンドラ
 		if(req.readyState == 4 && req.status == 200){ // サーバーからのレスポンスが完了し、かつ、通信が正常に終了した場合
 			let json = JSON.parse(req.responseText);
+			console.log(json);
 			map.getView().setCenter(
 				ol.proj.transform(
 					[json.features[0].center[0],json.features[0].center[1]],
@@ -73658,11 +73651,18 @@ $(function(){
 		//プリント
 		if( this.value == "print" ){
 			console.log("SAVE:PRINT");
-			$("#grid-container").height($("#map").height()+$("#topleft").height()*2);
-			$("#grid-container").width($("#map").width()+$("#topleft").width()*2);
+			// let width = $("#map").width();
+			// let height = $("#map").height();
+			// if(height*Math.sqrt(2)>=width){
+			// 	$("#grid-container").height(680);
+			// 	$("#grid-container").width(width*680/height);
+			// }else{
+			// 	$("#grid-container").height(height*849/width);
+			// 	$("#grid-container").width(849);
+			// }
 			window.print();//印刷呼び出し
-			$("#grid-container").height("");
-			$("#grid-container").width("");
+			// $("#grid-container").height("");
+			// $("#grid-container").width("");
 		//PNG出力
 		}else if( this.value == "png" ){
 			console.log("SAVE:PNG");
