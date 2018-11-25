@@ -416,7 +416,7 @@ function gsicreatesvg(){
 
 //mapboxレイヤをSVG形式でD3で描写
 function mapboxcreatesvg(){
-	var vt2geojson = require('../../../AppData/Roaming/npm/node_modules/@mapbox/vt2geojson');
+	//var vt2geojson = require('../../../AppData/Roaming/npm/node_modules/@mapbox/vt2geojson');
 	$("#svg_export").empty();
 	let width = $("#map").width();
 	let height = $("#map").height();
@@ -476,25 +476,25 @@ function mapboxcreatesvg(){
 		.each(function(d) {
 			// このgが各タイル座標となる
 			let g = d3.select(this);
-			vt2geojson({
-				uri: 'https://a.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/' +d[2]+'/'+d[0]+'/'+d[1]+'.vector.pbf?access_token=' + key,
-				layer: 'road'
-			}, function (err, result) {
-				if (err) throw err;
-				g.selectAll(".road")
-					.data(result.features.filter(function(feature){
-						if(map.getView().getZoom()>=16){
-							return feature.properties.class=="street"||feature.properties.class=="track"||feature.properties.class=="link"||feature.properties.class=="street_limited"||feature.properties.class=="service"||feature.properties.class=="secondary"||feature.properties.class=="trunk"||feature.properties.class=="primary"||feature.properties.class=="tertiary"||feature.properties.class=="motorway";
-						}else if(16>map.getView().getZoom()||map.getView().getZoom()>=13){
-							return feature.properties.class=="secondary"||feature.properties.class=="trunk"||feature.properties.class=="primary"||feature.properties.class=="tertiary"||feature.properties.class=="motorway";
-						}else if(13>map.getView().getZoom()||map.getView().getZoom()>=10){
-							return feature.properties.class=="motorway";
-						}
-					}))
-					.enter()
-					.append("path")
-					.attr("d", path);
-			});
+			// vt2geojson({
+			// 	uri: 'https://a.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/' +d[2]+'/'+d[0]+'/'+d[1]+'.vector.pbf?access_token=' + key,
+			// 	layer: 'road'
+			// }, function (err, result) {
+			// 	if (err) throw err;
+			// 	g.selectAll(".road")
+			// 		.data(result.features.filter(function(feature){
+			// 			if(map.getView().getZoom()>=16){
+			// 				return feature.properties.class=="street"||feature.properties.class=="track"||feature.properties.class=="link"||feature.properties.class=="street_limited"||feature.properties.class=="service"||feature.properties.class=="secondary"||feature.properties.class=="trunk"||feature.properties.class=="primary"||feature.properties.class=="tertiary"||feature.properties.class=="motorway";
+			// 			}else if(16>map.getView().getZoom()||map.getView().getZoom()>=13){
+			// 				return feature.properties.class=="secondary"||feature.properties.class=="trunk"||feature.properties.class=="primary"||feature.properties.class=="tertiary"||feature.properties.class=="motorway";
+			// 			}else if(13>map.getView().getZoom()||map.getView().getZoom()>=10){
+			// 				return feature.properties.class=="motorway";
+			// 			}
+			// 		}))
+			// 		.enter()
+			// 		.append("path")
+			// 		.attr("d", path);
+			// });
 		});
 }
 
@@ -564,18 +564,26 @@ function divdisplay(classname,state){
 
 // 設定パネルの「サイズ・枠」を非表示にしておく
 divdisplay("display","none");
+divdisplay("autocomplete","none");
+
 //2. END
 //3. 設定パネル内の動作
 //3.1 場所
 //検索機能（mapbox）
-function getJSON() {
-	let placename = document.getElementById('addr').value;
+function getPlaceName(){
+	return document.getElementById('addr').value;
+}
+function getJSON(placename) {
 	console.log("SERCH:"+placename);
 	var req = new XMLHttpRequest();		  // XMLHttpRequest オブジェクトを生成する
 	req.onreadystatechange = function() {		  // XMLHttpRequest オブジェクトの状態が変化した際に呼び出されるイベントハンドラ
 		if(req.readyState == 4 && req.status == 200){ // サーバーからのレスポンスが完了し、かつ、通信が正常に終了した場合
 			let json = JSON.parse(req.responseText);
 			console.log(json);
+			// for (key in json.features) {
+			// 	let place_splits=json.features[key].place_name;
+			// 	autocomplete.push(place_split[0]+" "+place_split[1]);
+			// }
 			map.getView().setCenter(
 				ol.proj.transform(
 					[json.features[0].center[0],json.features[0].center[1]],
@@ -588,6 +596,7 @@ function getJSON() {
 	req.open("GET", "https://api.mapbox.com/geocoding/v5/mapbox.places/"+placename+".json?access_token=pk.eyJ1Ijoic2FuZGNsb2NrIiwiYSI6ImNqbnZkdHdtdDBsemMzcW14cWhoaXJhZWkifQ.QgCrVouZ9aTkeTU3De9UrQ", false); // HTTPメソッドとアクセスするサーバーの　URL　を指定
 	req.send(null);// 実際にサーバーへリクエストを送信
 }
+
 
 //現在位置機能
 function place(){
@@ -607,11 +616,30 @@ function successCallback(position) {
 function errorCallback(error) {
 	alert("位置情報取得に失敗しました。");
 }
-$(function() {
+$(function() {//検索が押されたら候補用のドロップダウンを表示
 	$('#search button[type=button]').on("click", function() {
-		getJSON();
+		divdisplay("autocomplete","");
+		getJSON(getPlaceName());
+
 	});
 });
+
+// $(function() {
+// 	$('#addr').on("keydown", function() {
+// 		getJSON();
+// 		$input.typeahead("destroy");
+// 		$input.typeahead({
+// 		source: autocomplete,
+// });
+// 	});
+// });
+// $(function() {
+// 	$('#addr').keypress(function(e) {
+// 		if(e.which==13){
+//
+// 		}
+// 	});
+// });
 $(function() {
 	$('#place input[type=button]').on("click", function() {
 		place();

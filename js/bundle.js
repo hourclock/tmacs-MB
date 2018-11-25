@@ -73449,18 +73449,48 @@ function getJSON() {
 		if(req.readyState == 4 && req.status == 200){ // サーバーからのレスポンスが完了し、かつ、通信が正常に終了した場合
 			let json = JSON.parse(req.responseText);
 			console.log(json);
-			map.getView().setCenter(
-				ol.proj.transform(
-					[json.features[0].center[0],json.features[0].center[1]],
-					"EPSG:4326", "EPSG:3857"
-				)
-			);
-			map.getView().setZoom(17);
+			$(".typeahead").typeahead({
+				source:[
+					{id:"1" ,name:"山形"},
+					{id:"2" ,name:"山形市蔵王成沢"}
+				],
+				autoSelect:true,
+			});
+			// map.getView().setCenter(
+			// 	ol.proj.transform(
+			// 		[json.features[0].center[0],json.features[0].center[1]],
+			// 		"EPSG:4326", "EPSG:3857"
+			// 	)
+			// );
+			// map.getView().setZoom(17);
 		}
 	};
 	req.open("GET", "https://api.mapbox.com/geocoding/v5/mapbox.places/"+placename+".json?access_token=pk.eyJ1Ijoic2FuZGNsb2NrIiwiYSI6ImNqbnZkdHdtdDBsemMzcW14cWhoaXJhZWkifQ.QgCrVouZ9aTkeTU3De9UrQ", false); // HTTPメソッドとアクセスするサーバーの　URL　を指定
 	req.send(null);// 実際にサーバーへリクエストを送信
 }
+
+var $input = $(".typeahead");
+$input.typeahead({
+  source: [
+    {id: "someId1", name: "Display name 1"},
+    {id: "someId2", name: "Display name 2"}
+  ],
+  autoSelect: true
+});
+$input.change(function() {
+  var current = $input.typeahead("getActive");
+  if (current) {
+    // Some item from your model is active!
+    if (current.name == $input.val()) {
+      // This means the exact match is found. Use toLowerCase() if you want case insensitive match.
+    } else {
+      // This means it is only a partial match, you can either add a new item
+      // or take the active if you don't want new items
+    }
+  } else {
+    // Nothing is active so it is a new value (or maybe empty value)
+  }
+});
 
 //現在位置機能
 function place(){
@@ -73480,11 +73510,18 @@ function successCallback(position) {
 function errorCallback(error) {
 	alert("位置情報取得に失敗しました。");
 }
-$(function() {
-	$('#search button[type=button]').on("click", function() {
-		getJSON();
-	});
-});
+// $(function() {
+// 	$('#search button[type=button]').on("click", function() {
+// 		getJSON();
+// 	});
+// });
+// $(function() {
+// 	$('#addr').keypress(function(e) {
+// 		if(e.which==13){
+// 			getJSON();
+// 		}
+// 	});
+// });
 $(function() {
 	$('#place input[type=button]').on("click", function() {
 		place();
