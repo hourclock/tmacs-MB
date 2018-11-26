@@ -501,7 +501,7 @@ function mapboxcreatesvg(){
 //mapの変更後に呼び出される
 map.on("moveend",
 	function(){
-		$("#scale_input").val(map.getView().getZoom());//縮尺を更新
+		$("#scale_input").val(Math.round(map.getView().getZoom()*10)/10);//縮尺を更新
 		$("#rotate_input").val(Math.round(map.getView().getRotation()*180/Math.PI));//角度を更新
 		if(Status.tactile=="gsi"){//現在の触地図レイヤに応じてSVG出力用に描写
 			gsicreatesvg();
@@ -564,7 +564,6 @@ function divdisplay(classname,state){
 
 // 設定パネルの「サイズ・枠」を非表示にしておく
 divdisplay("display","none");
-divdisplay("autocomplete","none");
 
 //2. END
 //3. 設定パネル内の動作
@@ -573,17 +572,24 @@ divdisplay("autocomplete","none");
 function getPlaceName(){
 	return document.getElementById('addr').value;
 }
+let json;
 function getJSON(placename) {
 	console.log("SERCH:"+placename);
 	var req = new XMLHttpRequest();		  // XMLHttpRequest オブジェクトを生成する
 	req.onreadystatechange = function() {		  // XMLHttpRequest オブジェクトの状態が変化した際に呼び出されるイベントハンドラ
 		if(req.readyState == 4 && req.status == 200){ // サーバーからのレスポンスが完了し、かつ、通信が正常に終了した場合
-			let json = JSON.parse(req.responseText);
+			json = JSON.parse(req.responseText);
 			console.log(json);
-			// for (key in json.features) {
-			// 	let place_splits=json.features[key].place_name;
-			// 	autocomplete.push(place_split[0]+" "+place_split[1]);
-			// }
+			$("#dropdown").empty();
+			for (key in json.features) {
+				$("#dropdown").append(
+					$("<li/>").val(key).append(
+						$("<a/>").attr("class","dropdown-item").append(
+							json.features[key].place_name
+						)
+					)
+				);
+			}
 			map.getView().setCenter(
 				ol.proj.transform(
 					[json.features[0].center[0],json.features[0].center[1]],
@@ -614,32 +620,29 @@ function successCallback(position) {
 }
 //現在位置取得が失敗したら呼び出される
 function errorCallback(error) {
-	alert("位置情報取得に失敗しました。");
+	console.log("位置情報取得に失敗しました。");
 }
 $(function() {//検索が押されたら候補用のドロップダウンを表示
 	$('#search button[type=button]').on("click", function() {
-		divdisplay("autocomplete","");
+		// divdisplay("autocomplete","");
 		getJSON(getPlaceName());
 
 	});
 });
 
-// $(function() {
-// 	$('#addr').on("keydown", function() {
-// 		getJSON();
-// 		$input.typeahead("destroy");
-// 		$input.typeahead({
-// 		source: autocomplete,
-// });
-// 	});
-// });
-// $(function() {
-// 	$('#addr').keypress(function(e) {
-// 		if(e.which==13){
-//
-// 		}
-// 	});
-// });
+$(function() {
+	$(document).on("click", "#dropdown li" ,function() {
+		console.log(json.features[$(this).val()].center);
+		map.getView().setCenter(
+				ol.proj.transform(
+					[json.features[$(this).val()].center[0],json.features[$(this).val()].center[1]],
+					"EPSG:4326", "EPSG:3857"
+				)
+			);
+			map.getView().setZoom(17);
+	});
+});
+
 $(function() {
 	$('#place input[type=button]').on("click", function() {
 		place();
@@ -748,10 +751,11 @@ $(function() {
 $("input[name='scale']").TouchSpin({
 	min: 10,
 	max: 19,
-	step: 1,
+	step: 0.1,
+	decimals:1,
 });
 $(function() {
-	$('#scale_input').change(function() {
+	$('#scale_input').on("change",function() {
 		if(checkCharType(this.value,"zenkaku")){
 			let num = this.value.replace(/[Ａ-Ｚａ-ｚ０-９]/g,
 				function(s){
@@ -761,7 +765,7 @@ $(function() {
 			$('#scale_input').val(num);
 			map.getView().setZoom( num );
 		}else{
-			map.getView().setZoom( this.value );
+			map.getView().setZoom(this.value);
 		}
 	});
 });
