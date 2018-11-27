@@ -120,6 +120,35 @@ let gsi_water = new ol.layer.VectorTile({
 //1.2.2 mapbox(OSM)
 let key= 'pk.eyJ1Ijoic2FuZGNsb2NrIiwiYSI6ImNqbnZkdHdtdDBsemMzcW14cWhoaXJhZWkifQ.QgCrVouZ9aTkeTU3De9UrQ';
 //1.2.2.1 道路
+function mapboxRoadStyle(feature,resolution){
+	let color = "#00000000";
+	let width = 0;
+	if(map.getView().getZoom()>=16){
+		if(feature.get("class")=="street"||feature.get("class")=="track"||feature.get("class")=="link"||feature.get("class")=="street_limited"||feature.get("class")=="service"){
+			color="black";
+			width=5;
+		}
+	}
+	if(map.getView().getZoom()>=13){
+		if(feature.get("class")=="secondary"||feature.get("class")=="trunk"||feature.get("class")=="primary"||feature.get("class")=="tertiary"){
+			color="black";
+			width=5;
+		}
+	}
+	if(map.getView().getZoom()>=10){
+		if(feature.get("class")=="motorway"){
+			color="black";
+			width=5;
+		}
+	}
+	return[new ol.style.Style({
+		stroke: new ol.style.Stroke({
+			color: color,
+			width: width,
+			lineCap: "square",
+		})
+	})];
+}
 let mapbox_road = new ol.layer.VectorTile({
 	source: new ol.source.VectorTile({
 		attributions: '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> ' +
@@ -128,35 +157,7 @@ let mapbox_road = new ol.layer.VectorTile({
 		format: new ol.format.MVT({layers:"road"}),
 		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/' +'{z}/{x}/{y}.vector.pbf?access_token=' + key,
 	}),
-	style:function(feature,resolution){
-		let color = "#00000000";
-		let width = 0;
-		if(map.getView().getZoom()>=16){
-			if(feature.get("class")=="street"||feature.get("class")=="track"||feature.get("class")=="link"||feature.get("class")=="street_limited"||feature.get("class")=="service"){
-				color="black";
-				width=5;
-			}
-		}
-		if(map.getView().getZoom()>=13){
-			if(feature.get("class")=="secondary"||feature.get("class")=="trunk"||feature.get("class")=="primary"||feature.get("class")=="tertiary"){
-				color="black";
-				width=5;
-			}
-		}
-		if(map.getView().getZoom()>=10){
-			if(feature.get("class")=="motorway"){
-				color="black";
-				width=5;
-			}
-		}
-		return[new ol.style.Style({
-			stroke: new ol.style.Stroke({
-				color: color,
-				width: width,
-				lineCap: "square",
-			})
-		})];
-	}
+	style:function(feature,resolution){return mapboxRoadStyle(feature,resolution)}
 });
 //1.2.2.2 鉄道
 let mapbox_rail = new ol.layer.VectorTile({

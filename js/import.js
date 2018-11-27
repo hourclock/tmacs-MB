@@ -18,6 +18,10 @@ document.write('<script src="js/ol-hash.js"></script>');
 
 document.write('<script src="https://d3js.org/d3.v4.min.js"></script>');
 document.write('<script src="https://d3js.org/d3-tile.v0.0.min.js"></script>');
+
+
+document.write('<script type="text/javascript" src="js/bootstrap-multiselect.js"></script>');
+document.write('<link rel="stylesheet" href="css/bootstrap-multiselect.css" type="text/css"/>');
 // document.write('<script src="js/bootstrap3-typeahead.js"></script>');
 // document.write('<script src="https://map.yahooapis.jp/js/V1/jsapi?appid=dj00aiZpPW91S0QwaElwdWRUcSZzPWNvbnN1bWVyc2VjcmV0Jng9ZWM-" type="text/javascript"  charset="UTF-8" ></script>');
 

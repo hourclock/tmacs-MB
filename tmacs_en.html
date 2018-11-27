@@ -68,14 +68,19 @@
 														<label>Location</label>
 													</td>
 													<td class="text-left">
-														<div class="input-group">
+														<div id="search" class="input-group">
 															<input type="text" class="form-control" id="addr" placeholder="Addrress here">
 															<span class="input-group-btn">
-																<button class="btn btn-default" type="button" onclick="getJSON()">SEARCH</button>
+																<button class="btn btn-primary" type="button">SEARCH</button>
+																<label id="place" class="btn btn-default"><input type="button"> Current location</label>
 															</span>
 														</div>
-														<div id="place">
-															<label class="btn btn-primary "><input type="button" onclick="myplace()"> Current location</label>
+														<div class="dropdown">
+															<button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+															Others
+															</button>
+															 <ul id="dropdown" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+															</ul>
 														</div>
 													</td>
 												</tr>
@@ -255,6 +260,7 @@
 		</div>
 	</div>
 
-	<script type="text/javascript" src="js/bundle.js"></script>
+	<!-- <script type="text/javascript" src="js/bundle.js"></script> -->
+	<script type="text/javascript" src="js/script.js"></script>
 </body>
 </html>
