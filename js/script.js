@@ -30,6 +30,8 @@ let gsi_base = new ol.layer.Tile({
 //1.2 触地図レイヤ
 //1.2.1 国土地理院ベクトルタイル
 //1.2.1.1 道路
+
+let gsiRoadConfig=["国道","都道府県道","高速自動車国道等"];
 let gsi_road = new ol.layer.VectorTile({
 	source: new ol.source.VectorTile({
 		format: new ol.format.GeoJSON(),
@@ -120,7 +122,10 @@ let gsi_water = new ol.layer.VectorTile({
 //1.2.2 mapbox(OSM)
 let key= 'pk.eyJ1Ijoic2FuZGNsb2NrIiwiYSI6ImNqbnZkdHdtdDBsemMzcW14cWhoaXJhZWkifQ.QgCrVouZ9aTkeTU3De9UrQ';
 //1.2.2.1 道路
-function mapboxRoadStyle(feature,resolution){
+
+let mapboxRoadConfig=["street","track","link","street_limited","service","secondary","trunk","primary","tertiary","motorway"];
+function template(feature,resolution){
+	// console.log(feature);
 	let color = "#00000000";
 	let width = 0;
 	if(map.getView().getZoom()>=16){
@@ -149,6 +154,27 @@ function mapboxRoadStyle(feature,resolution){
 		})
 	})];
 }
+
+function mapboxRoadStyle(feature,resolution){
+	// console.log(feature);
+	let color = "#00000000";
+	let width = 0;
+	let temp=$("#layer").val()
+	for(value in temp){
+		if(feature.get("class")==temp[value]){
+			color="black";
+			width=5;
+		}
+	}
+	return[new ol.style.Style({
+		stroke: new ol.style.Stroke({
+			color: color,
+			width: width,
+			lineCap: "square",
+		})
+	})];
+}
+
 let mapbox_road = new ol.layer.VectorTile({
 	source: new ol.source.VectorTile({
 		attributions: '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> ' +
@@ -157,7 +183,13 @@ let mapbox_road = new ol.layer.VectorTile({
 		format: new ol.format.MVT({layers:"road"}),
 		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/' +'{z}/{x}/{y}.vector.pbf?access_token=' + key,
 	}),
-	style:function(feature,resolution){return mapboxRoadStyle(feature,resolution)}
+	style:function(feature,resolution){
+		if($("#layerconfig").prop('checked')){
+			return mapboxRoadStyle(feature,resolution)
+		}else{
+			return template(feature,resolution)
+		}
+	}
 });
 //1.2.2.2 鉄道
 let mapbox_rail = new ol.layer.VectorTile({
@@ -280,6 +312,11 @@ let map = new ol.Map({
 });
 //2. END
 //3. 関数の定義
+
+		$('#layer').multiselect({
+			nonSelectedText:"なし",
+		});
+
 //文字列の種類判別
 function checkCharType(input, charType) {
 	switch (charType) {
@@ -512,6 +549,16 @@ map.on("moveend",
 	}
 );
 
+for(value in mapboxRoadConfig){
+	$("#layer").append(
+		$("<option/>").val(mapboxRoadConfig[value]).append(
+			mapboxRoadConfig[value]
+		)
+	);
+}
+$("#layer").multiselect("rebuild");
+$("#layer").multiselect("disable");
+
 //使用するレイヤを連想配列に格納
 let Layers={
 	base:{osm:osm_base, bing:bing_base, gsi:gsi_base},
@@ -565,6 +612,9 @@ function divdisplay(classname,state){
 
 // 設定パネルの「サイズ・枠」を非表示にしておく
 divdisplay("display","none");
+
+
+
 
 //2. END
 //3. 設定パネル内の動作
@@ -649,6 +699,8 @@ $(function() {
 		place();
 	});
 });
+
+
 //3.1 END
 //3.2 背景地図
 //背景地図の切り替え
@@ -696,8 +748,27 @@ $(function() {
 		LayersSet();
 		if(Status.tactile=="gsi"){
 			gsicreatesvg();
+			$("select#layer option").remove();
+			for(value in gsiRoadConfig){
+				$("#layer").append(
+					$("<option/>").val(gsiRoadConfig[value]).append(
+						gsiRoadConfig[value]
+					)
+				);
+			}
+			$('#layer').multiselect('rebuild')
 		}else if(Status.tactile=="mapbox"){
 			mapboxcreatesvg();
+			$("select#layer option").remove();
+			mapbox_road.getSource().changed();
+			for(value in mapboxRoadConfig){
+				$("#layer").append(
+					$("<option/>").val(mapboxRoadConfig[value]).append(
+						mapboxRoadConfig[value]
+					)
+				);
+			}
+			$('#layer').multiselect('rebuild')
 		}
 		console.log("CHANGE BASE LAYER:"+this.value);
 	});
@@ -864,3 +935,22 @@ $(function(){
 });
 //3.9 END
 
+$(function() {
+	$('#layer').change(function(){
+		console.log($("#layer").val());
+		mapbox_road.getSource().changed();
+	});
+});
+
+
+
+$(function() {
+	$('#layerconfig').change(function(){
+		if($("#layerconfig").prop('checked')){
+			$("#layer").multiselect("enable");
+		}else{
+			$("#layer").multiselect("disable");
+		}
+		mapbox_road.getSource().changed();
+	});
+});

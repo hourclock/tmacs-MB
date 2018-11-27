@@ -189,12 +189,9 @@
 														<label>表示内容</label>
 													</td>
 													<td class="text-left">
-														<div id="basemap" class="btn-group" data-toggle="buttons">
-															<label class="btn btn-primary "><input type="radio" name="options" autocomplete="off" value="bing"> Bing</label>
-															<label class="btn btn-primary active"><input type="radio" name="options" autocomplete="off" value="osm"> OSM</label>
-															<label class="btn btn-primary"><input type="radio" name="options" autocomplete="off" value="gsi"> GSI</label>
-															<label class="btn btn-primary"><input type="radio" name="options" autocomplete="off" value="none"> なし</label>
-														</div>
+														<input id="layerconfig" type="checkbox" data-toggle="toggle" data-size="normal" data-on="手動" data-off="自動" >
+														<select id="layer" class="layer" multiple="multiple">
+														</select>
 													</td>
 												</tr>
 											</tbody>
