@@ -21,7 +21,7 @@
 				<br>
 				<div class="panel panel-primary">
 					<div class="panel-heading">
-						<h2>tmacsとは</h2>
+						<h4>tmacsとは</h4>
 					</div>
 					<div class="panel-body">
 						<p align="left">
@@ -74,7 +74,7 @@
 															<input type="text" class="form-control" id="addr" placeholder="住所・施設名など">
 															<span class="input-group-btn">
 																<button class="btn btn-primary" type="button">検索</button>
-																<label id="place" class="btn btn-default "><input type="button"> 現在地</label>
+																<label id="place" class="btn btn-default"><input type="button">現在地</label>
 															</span>
 														</div>
 														<div class="dropdown">
@@ -128,11 +128,21 @@
 														<label>触地図レイヤー</label>
 													</td>
 													<td class="text-left">
-														<div id="tactile-group" >
-															<input id="tactile-water" type="checkbox" checked data-toggle="toggle" data-size="normal" value="water" data-on="水場" data-off="水場" >
-															<input id="tactile-railway" type="checkbox" checked data-toggle="toggle" data-size="normal" value="rail" data-on="鉄道" data-off="鉄道" >
-															<input id="tactile-road" type="checkbox" checked data-toggle="toggle" data-size="normal" value="road" data-on="道路" data-off="道路" >
+														<div id="tactile-group">
+															<input id="tactile-water" type="checkbox" checked data-toggle="toggle" data-size="normal" value="water" data-on="水場" data-off="水場">
+															<input id="tactile-railway" type="checkbox" checked data-toggle="toggle" data-size="normal" value="rail" data-on="鉄道" data-off="鉄道">
+															<input id="tactile-road" type="checkbox" checked data-toggle="toggle" data-size="normal" value="road" data-on="道路" data-off="道路">
 														</div>
+													</td>
+												</tr>
+												<tr id="layerconfig">
+													<td>
+														<label class="lang" language="ja">表示内容(道路)</label>
+													</td>
+													<td class="text-left">
+														<input class="layerconfig" type="checkbox" data-toggle="toggle" data-size="normal" data-on="手動" data-off="自動">
+														<select id="layer" class="layer" multiple="multiple">
+														</select>
 													</td>
 												</tr>
 												<tr>
@@ -184,16 +194,6 @@
 														</div>
 													</td>
 												</tr>
-												<tr>
-													<td>
-														<label>表示内容</label>
-													</td>
-													<td class="text-left">
-														<input id="layerconfig" type="checkbox" data-toggle="toggle" data-size="normal" data-on="手動" data-off="自動" >
-														<select id="layer" class="layer" multiple="multiple">
-														</select>
-													</td>
-												</tr>
 											</tbody>
 										</table>
 									</div>
@@ -213,7 +213,7 @@
 													</td>
 													<td class="text-left">
 														<div id="output" class="btn-group" data-toggle="buttons">
-															<label class="btn btn-primary"><input type="button" value="print">印刷</input></label>
+															<label class="btn btn-primary"><input type="button" value="print" >印刷</input></label>
 															<label class="btn btn-primary"><input type="button" value="png">PNG</input></label>
 															<label class="btn btn-primary"><input type="button" value="svg">SVG</input></label>
 														</div>

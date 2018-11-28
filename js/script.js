@@ -31,7 +31,84 @@ let gsi_base = new ol.layer.Tile({
 //1.2.1 国土地理院ベクトルタイル
 //1.2.1.1 道路
 
-let gsiRoadConfig=["国道","都道府県道","高速自動車国道等"];
+let gsiRoadConfig=["国道","都道府県道","高速自動車国道等","市区町村道等"];
+function gsitemplate(feature){
+let color="black";
+	let width,lineCap;
+	if(feature.get('rdCtg') == "国道" || feature.get('rdCtg') == "都道府県道"){
+		width=8;
+	}else if(feature.get('rdCtg')== "高速自動車国道等"){
+		if(map.getView().getZoom()>=14){
+			width=5;
+		}else{
+			color="#00000000";
+			width=0;
+		}
+	}else if(feature.get('rnkWidth')== "5.5m-13m未満"||feature.get('rnkWidth')== "13m-19.5m未満"){
+		if(map.getView().getZoom()>=14){
+			width=5;
+		}else{
+			color="#00000000";
+			width=0;
+		}
+	}else{
+		if(map.getView().getZoom()>=16){
+			width=5;
+		}
+	}
+	return[new ol.style.Style({
+		stroke: new ol.style.Stroke({
+			color: color,
+			width: width,
+			lineCap: "square",
+		})
+	})];
+}
+
+function gsiRoadStyle(feature){
+	let color="#00000000";
+	let width=0;
+
+	let temp=$("#layer").val()
+	// if(temp.indexOf("国道")>=0){
+	// 	color="black";
+	// 	width=8;
+	// }
+	for(value in temp){
+		if(feature.get('rdCtg') == temp[value]){
+			color="black";
+			width=5;
+		}
+	}
+	// if(feature.get('rdCtg') == "国道" || feature.get('rdCtg') == "都道府県道"){
+	// 	width=8;
+	// }else if(feature.get('rdCtg')== "高速自動車国道等"){
+	// 	if(map.getView().getZoom()>=14){
+	// 		width=5;
+	// 	}else{
+	// 		color="#00000000";
+	// 		width=0;
+	// 	}
+	// }else if(feature.get('rnkWidth')== "5.5m-13m未満"||feature.get('rnkWidth')== "13m-19.5m未満"){
+	// 	if(map.getView().getZoom()>=14){
+	// 		width=5;
+	// 	}else{
+	// 		color="#00000000";
+	// 		width=0;
+	// 	}
+	// }else{
+	// 	if(map.getView().getZoom()>=16){
+	// 		width=5;
+	// 	}
+	// }
+	return[new ol.style.Style({
+		stroke: new ol.style.Stroke({
+			color: color,
+			width: width,
+			lineCap: "square",
+		})
+	})];
+}
 let gsi_road = new ol.layer.VectorTile({
 	source: new ol.source.VectorTile({
 		format: new ol.format.GeoJSON(),
@@ -39,37 +116,12 @@ let gsi_road = new ol.layer.VectorTile({
 		tileGrid: new ol.tilegrid.createXYZ({minZoom: 16, maxZoom: 16}),
 		url: 'http://cyberjapandata.gsi.go.jp/xyz/experimental_rdcl/{z}/{x}/{y}.geojson',
 	}),
-	style: function(feature) {
-		let color="black";
-		let width,lineCap;
-		if(feature.get('rdCtg') == "国道" || feature.get('rdCtg') == "都道府県道"){
-			width=8;
-		}else if(feature.get('rdCtg')== "高速自動車国道等"){
-			if(map.getView().getZoom()>=14){
-				width=5;
-			}else{
-				color="#00000000";
-				width=0;
-			}
-		}else if(feature.get('rnkWidth')== "5.5m-13m未満"||feature.get('rnkWidth')== "13m-19.5m未満"){
-			if(map.getView().getZoom()>=14){
-				width=5;
-			}else{
-				color="#00000000";
-				width=0;
-			}
+	style:function(feature,resolution){
+		if($(".layerconfig").prop('checked')){
+			return gsiRoadStyle(feature);
 		}else{
-			if(map.getView().getZoom()>=16){
-				width=5;
-			}
+			return gsitemplate(feature);
 		}
-		return[new ol.style.Style({
-			stroke: new ol.style.Stroke({
-				color: color,
-				width: width,
-				lineCap: "square",
-			})
-		})];
 	}
 });
 //1.2.1.2 鉄道
@@ -124,7 +176,7 @@ let key= 'pk.eyJ1Ijoic2FuZGNsb2NrIiwiYSI6ImNqbnZkdHdtdDBsemMzcW14cWhoaXJhZWkifQ.
 //1.2.2.1 道路
 
 let mapboxRoadConfig=["street","track","link","street_limited","service","secondary","trunk","primary","tertiary","motorway"];
-function template(feature,resolution){
+function mapboxtemplate(feature,resolution){
 	// console.log(feature);
 	let color = "#00000000";
 	let width = 0;
@@ -159,7 +211,7 @@ function mapboxRoadStyle(feature,resolution){
 	// console.log(feature);
 	let color = "#00000000";
 	let width = 0;
-	let temp=$("#layer").val()
+	let temp=$("#layer").val();
 	for(value in temp){
 		if(feature.get("class")==temp[value]){
 			color="black";
@@ -184,10 +236,10 @@ let mapbox_road = new ol.layer.VectorTile({
 		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/' +'{z}/{x}/{y}.vector.pbf?access_token=' + key,
 	}),
 	style:function(feature,resolution){
-		if($("#layerconfig").prop('checked')){
+		if($(".layerconfig").prop('checked')){
 			return mapboxRoadStyle(feature,resolution)
 		}else{
-			return template(feature,resolution)
+			return mapboxtemplate(feature,resolution)
 		}
 	}
 });
@@ -310,11 +362,15 @@ let map = new ol.Map({
 		}
 	}),
 });
+
+// ol.hash(map);
 //2. END
 //3. 関数の定義
 
 		$('#layer').multiselect({
 			nonSelectedText:"なし",
+			includeSelectAllOption:true,
+			selectAllText:"すべて選択",
 		});
 
 //文字列の種類判別
@@ -745,10 +801,12 @@ $(function() {
 	$('#tactile input[type=radio]').change(function() {
 		Status["tactile"]=this.value;
 		document.getElementById("tactile-table").style.display=(Status["tactile"]=="none")?'none':'';
+		document.getElementById("layerconfig").style.display=(Status["tactile"]=="none")?'none':'';
 		LayersSet();
 		if(Status.tactile=="gsi"){
 			gsicreatesvg();
 			$("select#layer option").remove();
+			gsi_road.getSource().changed();
 			for(value in gsiRoadConfig){
 				$("#layer").append(
 					$("<option/>").val(gsiRoadConfig[value]).append(
@@ -939,18 +997,20 @@ $(function() {
 	$('#layer').change(function(){
 		console.log($("#layer").val());
 		mapbox_road.getSource().changed();
+		gsi_road.getSource().changed();
 	});
 });
 
 
 
 $(function() {
-	$('#layerconfig').change(function(){
-		if($("#layerconfig").prop('checked')){
+	$('.layerconfig').change(function(){
+		if($(".layerconfig").prop('checked')){
 			$("#layer").multiselect("enable");
 		}else{
 			$("#layer").multiselect("disable");
 		}
 		mapbox_road.getSource().changed();
+		gsi_road.getSource().changed();
 	});
 });
