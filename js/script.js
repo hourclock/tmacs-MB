@@ -1,377 +1,12 @@
-//1. 表示するレイヤの準備
-//1.1 背景レイヤ
-//1.1.1OpenStreetMap
-let osm_base = new ol.layer.Tile({
-	source: new ol.source.OSM(),
-	opacity:0.5,
-	}
-);
-//1.1.2 Bing
-let bing_base = new ol.layer.Tile({
-	source: new ol.source.BingMaps({
-		key: 'AszwABNoPgkdx0WBY9mWxqQrA0KVt31moIe2OxNubCdN7ApfhKfDhXQ50mc34Nn4',
-		imagerySet: "Road",
-		crossOrigin:"anonymous",
-	}),
-	opacity:0.5,
-	}
-);
-//1.1.3 国土地理院（白地図）
-let gsi_base = new ol.layer.Tile({
-	source: new ol.source.XYZ({
-		url: "http://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png",
-		attributions: "<a href='http://maps.gsi.go.jp/development/ichiran.html' target='_blank'>地理院タイル</a>",
-		crossOrigin:"anonymous",
-	}),
-	opacity:0.5,
-	}
-);
-//1.1 END
-//1.2 触地図レイヤ
-//1.2.1 国土地理院ベクトルタイル
-//1.2.1.1 道路
-
-let gsiRoadConfig=["国道","都道府県道","高速自動車国道等","市区町村道等"];
-function gsitemplate(feature){
-let color="black";
-	let width,lineCap;
-	if(feature.get('rdCtg') == "国道" || feature.get('rdCtg') == "都道府県道"){
-		width=8;
-	}else if(feature.get('rdCtg')== "高速自動車国道等"){
-		if(map.getView().getZoom()>=14){
-			width=5;
-		}else{
-			color="#00000000";
-			width=0;
-		}
-	}else if(feature.get('rnkWidth')== "5.5m-13m未満"||feature.get('rnkWidth')== "13m-19.5m未満"){
-		if(map.getView().getZoom()>=14){
-			width=5;
-		}else{
-			color="#00000000";
-			width=0;
-		}
-	}else{
-		if(map.getView().getZoom()>=16){
-			width=5;
-		}
-	}
-	return[new ol.style.Style({
-		stroke: new ol.style.Stroke({
-			color: color,
-			width: width,
-			lineCap: "square",
-		})
-	})];
-}
-
-function gsiRoadStyle(feature){
-	let color="#00000000";
-	let width=0;
-
-	let temp=$("#layer").val()
-	// if(temp.indexOf("国道")>=0){
-	// 	color="black";
-	// 	width=8;
-	// }
-	for(value in temp){
-		if(feature.get('rdCtg') == temp[value]){
-			color="black";
-			width=5;
-		}
-	}
-	// if(feature.get('rdCtg') == "国道" || feature.get('rdCtg') == "都道府県道"){
-	// 	width=8;
-	// }else if(feature.get('rdCtg')== "高速自動車国道等"){
-	// 	if(map.getView().getZoom()>=14){
-	// 		width=5;
-	// 	}else{
-	// 		color="#00000000";
-	// 		width=0;
-	// 	}
-	// }else if(feature.get('rnkWidth')== "5.5m-13m未満"||feature.get('rnkWidth')== "13m-19.5m未満"){
-	// 	if(map.getView().getZoom()>=14){
-	// 		width=5;
-	// 	}else{
-	// 		color="#00000000";
-	// 		width=0;
-	// 	}
-	// }else{
-	// 	if(map.getView().getZoom()>=16){
-	// 		width=5;
-	// 	}
-	// }
-	return[new ol.style.Style({
-		stroke: new ol.style.Stroke({
-			color: color,
-			width: width,
-			lineCap: "square",
-		})
-	})];
-}
-let gsi_road = new ol.layer.VectorTile({
-	source: new ol.source.VectorTile({
-		format: new ol.format.GeoJSON(),
-		projection: 'EPSG:4326',
-		tileGrid: new ol.tilegrid.createXYZ({minZoom: 16, maxZoom: 16}),
-		url: 'http://cyberjapandata.gsi.go.jp/xyz/experimental_rdcl/{z}/{x}/{y}.geojson',
-	}),
-	style:function(feature,resolution){
-		if($(".layerconfig").prop('checked')){
-			return gsiRoadStyle(feature);
-		}else{
-			return gsitemplate(feature);
-		}
-	}
-});
-//1.2.1.2 鉄道
-let gsi_rail = new ol.layer.VectorTile({
-	source: new ol.source.VectorTile({
-		format: new ol.format.GeoJSON(),
-		projection: 'EPSG:3857',
-		tileGrid: new ol.tilegrid.createXYZ({minZoom: 16, maxZoom: 16}),
-		url: 'http://cyberjapandata.gsi.go.jp/xyz/experimental_railcl/{z}/{x}/{y}.geojson'
-	}),
-	style: new ol.style.Style({
-		stroke: new ol.style.Stroke({
-			color: 'black',
-			width: 10,
-			lineCap: "butt",
-			lineDash:[10,5],
-		})
-	})
-});
-//1.2.1.3 河川
-let gsi_water = new ol.layer.VectorTile({
-	source: new ol.source.VectorTile({
-		format: new ol.format.GeoJSON(),
-		projection: 'EPSG:3857',
-		tileGrid: new ol.tilegrid.createXYZ({minZoom: 16, maxZoom: 16}),
-		url: 'http://cyberjapandata.gsi.go.jp/xyz/experimental_rvrcl/{z}/{x}/{y}.geojson'
-	}),
-	style:function(feature){
-		if(map.getView().getZoom()>15&&feature.get('type') == "河川中心線（通常部）"){
-			return new ol.style.Style({
-				stroke: new ol.style.Stroke({
-					color: 'black',
-					width: 10,
-					lineCap:"round",
-					lineDash:[0.5,15],
-				})
-			});
-		}else{
-			return new ol.style.Style({
-				stroke: new ol.style.Stroke({
-					color: '#00000000',
-					width: 0,
-					lineCap: "butt",
-				})
-			});
-		}
-	}
-});
-
-//1.2.2 mapbox(OSM)
-let key= 'pk.eyJ1Ijoic2FuZGNsb2NrIiwiYSI6ImNqbnZkdHdtdDBsemMzcW14cWhoaXJhZWkifQ.QgCrVouZ9aTkeTU3De9UrQ';
-//1.2.2.1 道路
-
-let mapboxRoadConfig=["street","track","link","street_limited","service","secondary","trunk","primary","tertiary","motorway"];
-function mapboxtemplate(feature,resolution){
-	// console.log(feature);
-	let color = "#00000000";
-	let width = 0;
-	if(map.getView().getZoom()>=16){
-		if(feature.get("class")=="street"||feature.get("class")=="track"||feature.get("class")=="link"||feature.get("class")=="street_limited"||feature.get("class")=="service"){
-			color="black";
-			width=5;
-		}
-	}
-	if(map.getView().getZoom()>=13){
-		if(feature.get("class")=="secondary"||feature.get("class")=="trunk"||feature.get("class")=="primary"||feature.get("class")=="tertiary"){
-			color="black";
-			width=5;
-		}
-	}
-	if(map.getView().getZoom()>=10){
-		if(feature.get("class")=="motorway"){
-			color="black";
-			width=5;
-		}
-	}
-	return[new ol.style.Style({
-		stroke: new ol.style.Stroke({
-			color: color,
-			width: width,
-			lineCap: "square",
-		})
-	})];
-}
-
-function mapboxRoadStyle(feature,resolution){
-	// console.log(feature);
-	let color = "#00000000";
-	let width = 0;
-	let temp=$("#layer").val();
-	for(value in temp){
-		if(feature.get("class")==temp[value]){
-			color="black";
-			width=5;
-		}
-	}
-	return[new ol.style.Style({
-		stroke: new ol.style.Stroke({
-			color: color,
-			width: width,
-			lineCap: "square",
-		})
-	})];
-}
-
-let mapbox_road = new ol.layer.VectorTile({
-	source: new ol.source.VectorTile({
-		attributions: '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> ' +
-		'© <a href="https://www.openstreetmap.org/copyright">' +
-		'OpenStreetMap contributors</a>',
-		format: new ol.format.MVT({layers:"road"}),
-		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/' +'{z}/{x}/{y}.vector.pbf?access_token=' + key,
-	}),
-	style:function(feature,resolution){
-		if($(".layerconfig").prop('checked')){
-			return mapboxRoadStyle(feature,resolution)
-		}else{
-			return mapboxtemplate(feature,resolution)
-		}
-	}
-});
-//1.2.2.2 鉄道
-let mapbox_rail = new ol.layer.VectorTile({
-	source: new ol.source.VectorTile({
-		attributions: '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> ' +
-		'© <a href="https://www.openstreetmap.org/copyright">' +
-		'OpenStreetMap contributors</a>',
-		format: new ol.format.MVT({layers:"road"}),
-		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/' +'{z}/{x}/{y}.vector.pbf?access_token=' + key,
-	}),
-	style:function(feature,resolution){
-		let color="#00000000";
-		let width=0;
-		if(feature.properties_.class=="major_rail"||feature.properties_.class=="minor_rail"){
-			color="black";
-			switch(map.getView().getZoom()){
-				case 19:
-					width=5;
-					break;
-				case 18:
-					width=5;
-					break;
-				case 17:
-					width=5;
-					break;
-				case 16:
-					width=5;
-					break;
-			}
-		}
-		return[new ol.style.Style({
-			stroke: new ol.style.Stroke({
-				color: color,
-				width: width,
-				lineCap: "square",
-				lineDash:[10,20],
-			})
-		})];
-	}
-});
-//1.2.2.3 河川
-let mapbox_water = new ol.layer.VectorTile({
-	source: new ol.source.VectorTile({
-		attributions: '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> ' +
-		'© <a href="https://www.openstreetmap.org/copyright">' +
-		'OpenStreetMap contributors</a>',
-		format: new ol.format.MVT({layers:"waterarea"}),
-		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/' +'{z}/{x}/{y}.vector.pbf?access_token=' + key,
-	}),
-	style:function(feature,resolution){
-		let color="#00000000";
-		let width=0;
-		// switch(map.getView().getZoom()){
-		// 	case 19:
-		// 		color="black";
-		// 		width=5;
-		// 		break;
-		// 	case 18:
-		// 		color="black";
-		// 		width=5;
-		// 		break;
-		// 	case 17:
-		// 		color="black";
-		// 		width=5;
-		// 		break;
-		// 	case 16:
-		// 		color="black";
-		// 		width=5;
-		// 		break;
-		// }
-		if(map.getView().getZoom()>=16){
-			color="black";
-			width=5;
-		}
-		return[new ol.style.Style({
-			stroke: new ol.style.Stroke({
-				color: color,
-				width: width,
-				lineCap: "square",
-			})
-		})];
-	}
-});
-//1.2 END
-//1.END
-
-//2. mapの表示
-//初期位置
-let defaultCenter = [138.9374791, 37.8646316];	//新潟大学
-//let defaultCenter = [140.622944, 42.841269];	//ニセコ
-//let defaultCenter= [126.6461628, 37.3891199];	//Songdo Convensia
-
-//表示設定
-let view = new ol.View({
-	projection: "EPSG:3857",
-	center: ol.proj.transform(defaultCenter, "EPSG:4326", "EPSG:3857"),
-	//extent: ol.proj.transformExtent([122.9336, 24.2830, 153.9863, 45.5572], "EPSG:4326", "EPSG:3857"),// minx,miny,maxx,maxy
-	maxZoom: 19,
-	minZoom: 10,
-	zoom: 16,
-	rotation: 0,
-});
-$("#map").height($(window).height()*0.8);
-$(window).resize(function(){
-	$("#map").height($(window).height()*0.8);
-	});
-
-
-//マップを<div id="map">に生成
-let map = new ol.Map({
-	target: 'map',
-	layers: [],
-	view: view,
-	controls: ol.control.defaults({
-		zoom: false,
-		attributionOptions: {
-			collapsible: false
-		}
-	}),
-});
-
-// ol.hash(map);
-//2. END
 //3. 関数の定義
 
-		$('#layer').multiselect({
-			nonSelectedText:"なし",
-			includeSelectAllOption:true,
-			selectAllText:"すべて選択",
-		});
+$('#layer').multiselect({
+	nonSelectedText:"なし",
+	includeSelectAllOption:true,
+	selectAllText:"すべて選択",
+});
+
+$("#addr").focus();
 
 //文字列の種類判別
 function checkCharType(input, charType) {
@@ -405,7 +40,7 @@ function checkCharType(input, charType) {
 }
 
 //現在表示されている背景画像を取得DataURL化
-function createdataurl(){
+function createDataUrl(){
 	for(layer in Status.switch){
 		if(Status.switch[layer]=="ON"){
 			map.removeLayer(Layers.tactile[Status.tactile][layer]);
@@ -425,7 +60,7 @@ function createdataurl(){
 }
 
 //GSIレイヤをSVG形式でD3で描写
-function gsicreatesvg(){
+function gsiCreateSvg(){
 	$("#svg_export").empty();
 	let width = $("#map").width();
 	let height = $("#map").height();
@@ -509,8 +144,7 @@ function gsicreatesvg(){
 }
 
 //mapboxレイヤをSVG形式でD3で描写
-function mapboxcreatesvg(){
-	//var vt2geojson = require('../../../AppData/Roaming/npm/node_modules/@mapbox/vt2geojson');
+function mapboxCreateSvg(){
 	$("#svg_export").empty();
 	let width = $("#map").width();
 	let height = $("#map").height();
@@ -570,25 +204,25 @@ function mapboxcreatesvg(){
 		.each(function(d) {
 			// このgが各タイル座標となる
 			let g = d3.select(this);
-			// vt2geojson({
-			// 	uri: 'https://a.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/' +d[2]+'/'+d[0]+'/'+d[1]+'.vector.pbf?access_token=' + key,
-			// 	layer: 'road'
-			// }, function (err, result) {
-			// 	if (err) throw err;
-			// 	g.selectAll(".road")
-			// 		.data(result.features.filter(function(feature){
-			// 			if(map.getView().getZoom()>=16){
-			// 				return feature.properties.class=="street"||feature.properties.class=="track"||feature.properties.class=="link"||feature.properties.class=="street_limited"||feature.properties.class=="service"||feature.properties.class=="secondary"||feature.properties.class=="trunk"||feature.properties.class=="primary"||feature.properties.class=="tertiary"||feature.properties.class=="motorway";
-			// 			}else if(16>map.getView().getZoom()||map.getView().getZoom()>=13){
-			// 				return feature.properties.class=="secondary"||feature.properties.class=="trunk"||feature.properties.class=="primary"||feature.properties.class=="tertiary"||feature.properties.class=="motorway";
-			// 			}else if(13>map.getView().getZoom()||map.getView().getZoom()>=10){
-			// 				return feature.properties.class=="motorway";
-			// 			}
-			// 		}))
-			// 		.enter()
-			// 		.append("path")
-			// 		.attr("d", path);
-			// });
+			vt2geojson({
+				uri: 'https://a.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/' +d[2]+'/'+d[0]+'/'+d[1]+'.vector.pbf?access_token=' + mapboxApiKey,
+				layer: 'road'
+			}, function (err, result) {
+				if (err) throw err;
+				g.selectAll(".road")
+					.data(result.features.filter(function(feature){
+						if(map.getView().getZoom()>=16){
+							return feature.properties.class=="street"||feature.properties.class=="track"||feature.properties.class=="link"||feature.properties.class=="street_limited"||feature.properties.class=="service"||feature.properties.class=="secondary"||feature.properties.class=="trunk"||feature.properties.class=="primary"||feature.properties.class=="tertiary"||feature.properties.class=="motorway";
+						}else if(16>map.getView().getZoom()||map.getView().getZoom()>=13){
+							return feature.properties.class=="secondary"||feature.properties.class=="trunk"||feature.properties.class=="primary"||feature.properties.class=="tertiary"||feature.properties.class=="motorway";
+						}else if(13>map.getView().getZoom()||map.getView().getZoom()>=10){
+							return feature.properties.class=="motorway";
+						}
+					}))
+					.enter()
+					.append("path")
+					.attr("d", path);
+			});
 		});
 }
 
@@ -598,17 +232,17 @@ map.on("moveend",
 		$("#scale_input").val(Math.round(map.getView().getZoom()*10)/10);//縮尺を更新
 		$("#rotate_input").val(Math.round(map.getView().getRotation()*180/Math.PI));//角度を更新
 		if(Status.tactile=="gsi"){//現在の触地図レイヤに応じてSVG出力用に描写
-			gsicreatesvg();
+			gsiCreateSvg();
 		}else if(Status.tactile=="mapbox"){
-			mapboxcreatesvg();
+			mapboxCreateSvg();
 		}
 	}
 );
 
-for(value in mapboxRoadConfig){
+for(content in mapboxRoadContents){
 	$("#layer").append(
-		$("<option/>").val(mapboxRoadConfig[value]).append(
-			mapboxRoadConfig[value]
+		$("<option/>").val(mapboxRoadContents[content]).append(
+			mapboxRoadContents[content]
 		)
 	);
 }
@@ -617,16 +251,16 @@ $("#layer").multiselect("disable");
 
 //使用するレイヤを連想配列に格納
 let Layers={
-	base:{osm:osm_base, bing:bing_base, gsi:gsi_base},
+	back:{osm:osmBackLayer, bing:bingBackLayer, gsi:gsiBackLayer},
 	tactile:{
-		gsi:{water:gsi_water, rail:gsi_rail, road:gsi_road},
-		mapbox:{water:mapbox_water, rail:mapbox_rail, road:mapbox_road}
+		gsi:{water:gsiWaterLayer, rail:gsiRailLayer, road:gsiRoadLayer},
+		mapbox:{water:mapboxWaterLayer, rail:mapboxRailLayer, road:mapboxRoadLayer}
 	}
 };
 
 //レイヤの状態を配列に格納(管理はここで一括で行う)
 let Status = {
-	base:"osm",
+	back:"osm",
 	tactile:"mapbox",
 	switch:{
 		water:"ON",
@@ -636,30 +270,30 @@ let Status = {
 };
 
 //レイヤの制御関数
-function LayersSet(){
-	for(base in Layers.base){//全ての背景画像を削除
-		map.removeLayer(Layers.base[base]);
+function layersSet(){
+	for(backID in Layers.back){//全ての背景画像を削除
+		map.removeLayer(Layers.back[backID]);
 	}
-	for(tactile in Layers.tactile){//全ての触地図レイヤを削除
-		for(layer in Layers.tactile[tactile]){
-			map.removeLayer(Layers.tactile[tactile][layer]);
+	for(tactileID in Layers.tactile){//全ての触地図レイヤを削除
+		for(layerID in Layers.tactile[tactileID]){
+			map.removeLayer(Layers.tactile[tactileID][layerID]);
 		}
 	}
-	if(Status.base!="none"){//背景画像なしを除いて
-		map.addLayer(Layers.base[Status.base]);//Statusにて指定された背景画像表示
+	if(Status.back!="none"){//背景画像なしを除いて
+		map.addLayer(Layers.back[Status.back]);//Statusにて指定された背景画像表示
 	}
 	if(Status.tactile!="none"){//触地図レイヤなしを除いて
-		for(layer in Status.switch){
-			if(Status.switch[layer]=="ON"){//StatusがONの状態のレイヤを表示
-				map.addLayer(Layers.tactile[Status.tactile][layer]);
+		for(switchID in Status.switch){
+			if(Status.switch[switchID]=="ON"){//StatusがONの状態のレイヤを表示
+				map.addLayer(Layers.tactile[Status.tactile][switchID]);
 			}
 		}
 	}
 }
-LayersSet();
+layersSet();
 
 //クラスの表示・非表示を制御する関数
-function divdisplay(classname,state){
+function controlDisplay(classname,state){
 	let contents = document.getElementsByClassName(classname);
 	for(let i = 0; i < contents.length; i++) {
 		contents[i].style.display = state;
@@ -667,53 +301,15 @@ function divdisplay(classname,state){
 }
 
 // 設定パネルの「サイズ・枠」を非表示にしておく
-divdisplay("display","none");
-
-
+controlDisplay("gridDisplay","none");
 
 
 //2. END
 //3. 設定パネル内の動作
 //3.1 場所
 //検索機能（mapbox）
-function getPlaceName(){
-	return document.getElementById('addr').value;
-}
-let json;
-function getJSON(placename) {
-	console.log("SERCH:"+placename);
-	var req = new XMLHttpRequest();		  // XMLHttpRequest オブジェクトを生成する
-	req.onreadystatechange = function() {		  // XMLHttpRequest オブジェクトの状態が変化した際に呼び出されるイベントハンドラ
-		if(req.readyState == 4 && req.status == 200){ // サーバーからのレスポンスが完了し、かつ、通信が正常に終了した場合
-			json = JSON.parse(req.responseText);
-			console.log(json);
-			$("#dropdown").empty();
-			for (key in json.features) {
-				$("#dropdown").append(
-					$("<li/>").val(key).append(
-						$("<a/>").attr("class","dropdown-item").append(
-							json.features[key].place_name
-						)
-					)
-				);
-			}
-			map.getView().setCenter(
-				ol.proj.transform(
-					[json.features[0].center[0],json.features[0].center[1]],
-					"EPSG:4326", "EPSG:3857"
-				)
-			);
-			map.getView().setZoom(17);
-		}
-	};
-	req.open("GET", "https://api.mapbox.com/geocoding/v5/mapbox.places/"+placename+".json?access_token=pk.eyJ1Ijoic2FuZGNsb2NrIiwiYSI6ImNqbnZkdHdtdDBsemMzcW14cWhoaXJhZWkifQ.QgCrVouZ9aTkeTU3De9UrQ", false); // HTTPメソッドとアクセスするサーバーの　URL　を指定
-	req.send(null);// 実際にサーバーへリクエストを送信
-}
-
-
 //現在位置機能
 function place(){
-	console.log("PRESENT LOCATION");
 	navigator.geolocation.getCurrentPosition(successCallback, errorCallback);
 }
 //現在位置取得が成功したら呼び出される
@@ -721,36 +317,71 @@ function successCallback(position) {
 	var lat = position.coords.latitude;
 	var lng = position.coords.longitude;
 
-	defaultCenter=[lng,lat];
-	map.getView().setCenter(ol.proj.transform(defaultCenter, "EPSG:4326", "EPSG:3857"));
+	map.getView().setCenter(ol.proj.transform([lng,lat], "EPSG:4326", "EPSG:3857"));
 	map.getView().setZoom(17);
 }
 //現在位置取得が失敗したら呼び出される
 function errorCallback(error) {
 	console.log("位置情報取得に失敗しました。");
 }
-$(function() {//検索が押されたら候補用のドロップダウンを表示
-	$('#search button[type=button]').on("click", function() {
-		// divdisplay("autocomplete","");
-		getJSON(getPlaceName());
 
+function getPlaceName(){
+	return document.getElementById('addr').value;
+}
+
+function getJson(placename){//同期通信だから大量のデータを取得しちゃいけない
+	console.log(placename+"を検索します");
+	let json=$.ajax({
+		type: 'GET',
+		url: "https://api.mapbox.com/geocoding/v5/mapbox.places/"+placename+".json?access_token=pk.eyJ1Ijoic2FuZGNsb2NrIiwiYSI6ImNqbnZkdHdtdDBsemMzcW14cWhoaXJhZWkifQ.QgCrVouZ9aTkeTU3De9UrQ",
+		async:false,//非同期処理を中止
+		dataType: 'json',
 	});
-});
+	return json.responseJSON;
+}
 
-$(function() {
-	$(document).on("click", "#dropdown li" ,function() {
-		console.log(json.features[$(this).val()].center);
-		map.getView().setCenter(
-				ol.proj.transform(
-					[json.features[$(this).val()].center[0],json.features[$(this).val()].center[1]],
-					"EPSG:4326", "EPSG:3857"
+function createSuggestions(json,classname){
+	$(classname).empty();
+	for (id in json.features) {
+		$("#dropdown").append(
+			$("<li/>").val(id).append(
+				$("<a/>").attr("class","dropdown-item").append(
+					json.features[id].place_name
 				)
-			);
-			map.getView().setZoom(17);
-	});
-});
+			)
+		);
+	}
+}
 
-$(function() {
+function setCenter(map,json,id){
+	map.getView().setCenter(
+		ol.proj.transform(
+			[json.features[id].center[0],json.features[id].center[1]],
+			"EPSG:4326", "EPSG:3857"
+		)
+	);
+	map.getView().setZoom(17);
+}
+$(function(){//検索が押されたら候補用のドロップダウンを表示
+	let searchResult;
+	function search(event){
+		searchResult=getJson(getPlaceName());
+		createSuggestions(searchResult,"#dropdown");
+		setCenter(map,searchResult,0);
+		event.stopPropagation();
+		$('.dropdown-toggle').dropdown('toggle');
+	}
+	$('#search button[type=button]').on("click", function(event){
+		search(event);
+	});
+	$('#search input[type=text]').complete(function(event){
+		search(event);
+	});
+
+	$(document).on("click", "#dropdown li" ,function() {
+		setCenter(map,searchResult,$(this).val());
+	});
+
 	$('#place input[type=button]').on("click", function() {
 		place();
 	});
@@ -762,8 +393,8 @@ $(function() {
 //背景地図の切り替え
 $(function() {
 	$('#basemap input[type=radio]').change( function() {
-		Status["base"]=this.value;
-		LayersSet();
+		Status.back=this.value;
+		layersSet();
 		console.log("CHANGE BASE LAYER:"+this.value);
 	});
 });
@@ -784,12 +415,12 @@ $(function() {
 				}
 			);
 			$('#opacity_input').val(num);
-			for(base in Layers["base"]){
-				Layers["base"][base].setOpacity(num/100);
+			for(backID in Layers.back){
+				Layers.back[backID].setOpacity(num/100);
 			}
 		}else{
-			for(base in Layers["base"]){
-				Layers["base"][base].setOpacity(this.value/100);
+			for(backID in Layers.back){
+				Layers.back[backID].setOpacity(this.value/100);
 			}
 		}
 	});
@@ -799,30 +430,35 @@ $(function() {
 //触地図のon/off
 $(function() {
 	$('#tactile input[type=radio]').change(function() {
-		Status["tactile"]=this.value;
-		document.getElementById("tactile-table").style.display=(Status["tactile"]=="none")?'none':'';
-		document.getElementById("layerconfig").style.display=(Status["tactile"]=="none")?'none':'';
-		LayersSet();
+		Status.tactile=this.value;
+		if(Status.tactile=="none"){
+			controlDisplay("tactileLayer","none");
+		}else{
+			controlDisplay("tactileLayer","");
+		}
+		// document.getElementById("tactile-table").style.display=(Status["tactile"]=="none")?'none':'';
+		// document.getElementById("layerconfig").style.display=(Status["tactile"]=="none")?'none':'';
+		layersSet();
 		if(Status.tactile=="gsi"){
-			gsicreatesvg();
+			gsiCreateSvg();
 			$("select#layer option").remove();
-			gsi_road.getSource().changed();
-			for(value in gsiRoadConfig){
+			gsiRoadLayer.getSource().changed();
+			for(value in gsiRoadContents){
 				$("#layer").append(
-					$("<option/>").val(gsiRoadConfig[value]).append(
-						gsiRoadConfig[value]
+					$("<option/>").val(gsiRoadContents[value]).append(
+						gsiRoadContents[value]
 					)
 				);
 			}
 			$('#layer').multiselect('rebuild')
 		}else if(Status.tactile=="mapbox"){
-			mapboxcreatesvg();
+			mapboxCreateSvg();
 			$("select#layer option").remove();
-			mapbox_road.getSource().changed();
-			for(value in mapboxRoadConfig){
+			mapboxRoadLayer.getSource().changed();
+			for(value in mapboxRoadContents){
 				$("#layer").append(
-					$("<option/>").val(mapboxRoadConfig[value]).append(
-						mapboxRoadConfig[value]
+					$("<option/>").val(mapboxRoadContents[value]).append(
+						mapboxRoadContents[value]
 					)
 				);
 			}
@@ -837,19 +473,19 @@ $(function() {
 $(function() {
 	$('#tactile-water').change(function() {
 		Status["switch"]["water"]=( $(this).prop('checked') )?"ON":"OFF";
-		LayersSet();
+		layersSet();
 	});
 });
 $(function() {
 	$('#tactile-railway').change(function() {
 		Status["switch"]["rail"]=( $(this).prop('checked') )?"ON":"OFF";
-		LayersSet();
+		layersSet();
 	});
 });
 $(function() {
 	$('#tactile-road').change(function() {
 		Status["switch"]["road"]=( $(this).prop('checked') )?"ON":"OFF";
-		LayersSet();
+		layersSet();
 	});
 });
 //3.5 END
@@ -905,10 +541,10 @@ $(function() {
 $(function() {
 	$('#append-check').change(function() {
 		if( !$(this).prop('checked')){
-			divdisplay("display","none");
+			controlDisplay("gridDisplay","none");
 			console.log("Append OFF");
 		}else{
-			divdisplay("display","");
+			controlDisplay("gridDisplay","");
 			console.log("Append ON");
 		}
 	});
@@ -995,9 +631,8 @@ $(function(){
 
 $(function() {
 	$('#layer').change(function(){
-		console.log($("#layer").val());
-		mapbox_road.getSource().changed();
-		gsi_road.getSource().changed();
+		mapboxRoadLayer.getSource().changed();
+		gsiRoadLayer.getSource().changed();
 	});
 });
 
@@ -1010,7 +645,7 @@ $(function() {
 		}else{
 			$("#layer").multiselect("disable");
 		}
-		mapbox_road.getSource().changed();
-		gsi_road.getSource().changed();
+		mapboxRoadLayer.getSource().changed();
+		gsiRoadLayer.getSource().changed();
 	});
 });

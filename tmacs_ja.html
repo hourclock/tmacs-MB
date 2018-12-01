@@ -81,7 +81,7 @@
 															<button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 															他の候補
 															</button>
-															 <ul id="dropdown" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+															<ul id="dropdown" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 															</ul>
 														</div>
 													</td>
@@ -123,19 +123,19 @@
 														</div>
 													</td>
 												</tr>
-												<tr id="tactile-table">
+												<tr class="tactileLayer">
 													<td>
 														<label>触地図レイヤー</label>
 													</td>
 													<td class="text-left">
-														<div id="tactile-group">
+														<div class="">
 															<input id="tactile-water" type="checkbox" checked data-toggle="toggle" data-size="normal" value="water" data-on="水場" data-off="水場">
 															<input id="tactile-railway" type="checkbox" checked data-toggle="toggle" data-size="normal" value="rail" data-on="鉄道" data-off="鉄道">
 															<input id="tactile-road" type="checkbox" checked data-toggle="toggle" data-size="normal" value="road" data-on="道路" data-off="道路">
 														</div>
 													</td>
 												</tr>
-												<tr id="layerconfig">
+												<tr class="tactileLayer">
 													<td>
 														<label class="lang" language="ja">表示内容(道路)</label>
 													</td>
@@ -179,7 +179,7 @@
 														</div>
 													</td>
 												</tr>
-												<tr id="append-grid" class="display">
+												<tr id="append-grid" class="gridDisplay">
 													<td>
 														<label>サイズ・枠</label>
 													</td>
@@ -216,6 +216,7 @@
 															<label class="btn btn-primary"><input type="button" value="print" >印刷</input></label>
 															<label class="btn btn-primary"><input type="button" value="png">PNG</input></label>
 															<label class="btn btn-primary"><input type="button" value="svg">SVG</input></label>
+															<label class="btn btn-primary"><input type="button" value="mouri">編集</input></label>
 														</div>
 													</td>
 												</tr>
@@ -267,7 +268,8 @@
 		</div>
 	</div>
 
+	<script type="text/javascript" src="js/defineMapLayer.js"></script>
+	<script type="text/javascript" src="js/defineMapObject.js"></script>
 	<script type="text/javascript" src="js/script.js"></script>
-	<!-- <script type="text/javascript" src="js/bundle.js"></script> -->
 </body>
 </html>
