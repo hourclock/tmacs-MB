@@ -1,12 +1,9 @@
-//1. 表示するレイヤの準備
-//1.1 背景レイヤ
-//1.1.1OpenStreetMap
 let osmBackLayer = new ol.layer.Tile({
 	source: new ol.source.OSM(),
 	opacity:0.5,
 	}
 );
-//1.1.2 Bing
+
 let bingBackLayer = new ol.layer.Tile({
 	source: new ol.source.BingMaps({
 		key: 'AszwABNoPgkdx0WBY9mWxqQrA0KVt31moIe2OxNubCdN7ApfhKfDhXQ50mc34Nn4',
@@ -16,7 +13,7 @@ let bingBackLayer = new ol.layer.Tile({
 	opacity:0.5,
 	}
 );
-//1.1.3 国土地理院（白地図）
+
 let gsiBackLayer = new ol.layer.Tile({
 	source: new ol.source.XYZ({
 		url: "http://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png",
@@ -26,71 +23,63 @@ let gsiBackLayer = new ol.layer.Tile({
 	opacity:0.5,
 	}
 );
-//1.1 END
 
-//1.2 触地図レイヤ
-//1.2.1 国土地理院ベクトルタイル
-//1.2.1.1 道路
-let gsiRoadContents=["国道","都道府県道","高速自動車国道等","市区町村道等","3m未満","3m-5.5m未満","5.5m-13m未満","13m-19.5m未満"];
+const gsiRoadContents=["国道","都道府県道","高速自動車国道等","市区町村道等","3m未満","3m-5.5m未満","5.5m-13m未満","13m-19.5m未満"];
+
 function gsiAutoRoadStyle(feature){
-let color="black";
-	let width,lineCap;
-	if(feature.get('rdCtg') == "国道" || feature.get('rdCtg') == "都道府県道"){
+	let color="#00000000";
+	let width=0;
+	let visibility="invisible";
+	if(["国道","都道府県道"].indexOf(feature.rdCtg)>=0){
+		color="black";
 		width=8;
-	}else if(feature.get('rdCtg')== "高速自動車国道等"){
+		visibility="visible";
+	}else if(["国道","都道府県道","高速自動車国道等"].indexOf(feature.rdCtg)>=0){
 		if(map.getView().getZoom()>=14){
+			color="black";
 			width=5;
-		}else{
-			color="#00000000";
-			width=0;
+			visibility="visible";
 		}
-	}else if(feature.get('rnkWidth')== "5.5m-13m未満"||feature.get('rnkWidth')== "13m-19.5m未満"){
+	}else if(["5.5m-13m未満","13m-19.5m未満"].indexOf(feature.rnkWidth)>=0){
 		if(map.getView().getZoom()>=14){
+			color="black";
 			width=5;
-		}else{
-			color="#00000000";
-			width=0;
+			visibility="visible";
 		}
 	}else{
 		if(map.getView().getZoom()>=16){
+			color="black";
 			width=5;
+			visibility="visible";
 		}
 	}
-	return[new ol.style.Style({
-		stroke: new ol.style.Stroke({
-			color: color,
-			width: width,
-			lineCap: "square",
-		})
-	})];
+	return {color:color,width:width,visibility:visibility};
 }
 
 function gsiSelectRoadStyle(feature){
 	let color="#00000000";
 	let width=0;
+	let visibility="invisible";
 
-	let temp=$("#layer").val();
-	for(value in temp){
-		if(temp[value]=="3m未満"||temp[value]=="3m-5.5m未満"||temp[value]=="5.5m-13m未満"||temp[value]=="13m-19.5m未満"){
-			if(feature.get('rnkWidth') == temp[value]){
+	let select=$("#layer").val();
+	for(value in select){
+		if(["3m未満","3m-5.5m未満","5.5m-13m未満","13m-19.5m未満"].indexOf(select[value])>=0){
+			if(feature.rnkWidth == select[value]){
 				color="black";
 				width=5;
+				visibility="visible";
 			}
 		}else{
-			if(feature.get('rdCtg') == temp[value]){
+			if(feature.rdCtg == select[value]){
 				color="black";
 				width=5;
+				visibility="visible";
 			}
 		}
 	}
-	return[new ol.style.Style({
-		stroke: new ol.style.Stroke({
-			color: color,
-			width: width,
-			lineCap: "square",
-		})
-	})];
+	return {color:color,width:width,visibility:visibility};
 }
+
 let gsiRoadLayer = new ol.layer.VectorTile({
 	source: new ol.source.VectorTile({
 		attributions:  "<a href='http://maps.gsi.go.jp/development/ichiran.html' target='_blank'>地理院タイル</a>",
@@ -100,14 +89,22 @@ let gsiRoadLayer = new ol.layer.VectorTile({
 		url: 'http://cyberjapandata.gsi.go.jp/xyz/experimental_rdcl/{z}/{x}/{y}.geojson',
 	}),
 	style:function(feature,resolution){
+		let style;
 		if($(".layerconfig").prop('checked')){
-			return gsiSelectRoadStyle(feature);
+			style = gsiSelectRoadStyle(feature);
 		}else{
-			return gsiAutoRoadStyle(feature);
+			style = gsiAutoRoadStyle(feature);
 		}
+		return[new ol.style.Style({
+			stroke: new ol.style.Stroke({
+				color: style.color,
+				width: style.width,
+				lineCap: "square",
+			})
+		})];
 	}
 });
-//1.2.1.2 鉄道
+
 let gsiRailLayer = new ol.layer.VectorTile({
 	source: new ol.source.VectorTile({
 		attributions:  "<a href='http://maps.gsi.go.jp/development/ichiran.html' target='_blank'>地理院タイル</a>",
@@ -125,7 +122,7 @@ let gsiRailLayer = new ol.layer.VectorTile({
 		})
 	})
 });
-//1.2.1.3 河川
+
 let gsiWaterLayer = new ol.layer.VectorTile({
 	source: new ol.source.VectorTile({
 		attributions:  "<a href='http://maps.gsi.go.jp/development/ichiran.html' target='_blank'>地理院タイル</a>",
@@ -156,60 +153,52 @@ let gsiWaterLayer = new ol.layer.VectorTile({
 	}
 });
 
-//1.2.2 mapbox(OSM)
-let mapboxApiKey= 'pk.eyJ1Ijoic2FuZGNsb2NrIiwiYSI6ImNqbnZkdHdtdDBsemMzcW14cWhoaXJhZWkifQ.QgCrVouZ9aTkeTU3De9UrQ';
-//1.2.2.1 道路
+//もし誰かが引き継ぐならmapboxのアカウント自分で取ってAPIキー自分の物に差し替えて
+const mapboxApiKey= 'pk.eyJ1Ijoic2FuZGNsb2NrIiwiYSI6ImNqbnZkdHdtdDBsemMzcW14cWhoaXJhZWkifQ.QgCrVouZ9aTkeTU3De9UrQ';
 
-let mapboxRoadContents=["street","track","link","street_limited","service","secondary","trunk","primary","tertiary","motorway"];
+const mapboxRoadContents=["street","track","link","street_limited","service","secondary","trunk","primary","tertiary","motorway"];
+
 function mapboxAutoRoadStyle(feature){
-	// console.log(feature);
 	let color = "#00000000";
 	let width = 0;
+	let visibility="invisible";
 	if(map.getView().getZoom()>=16){
-		if(feature.get("class")=="street"||feature.get("class")=="track"||feature.get("class")=="link"||feature.get("class")=="street_limited"||feature.get("class")=="service"){
+		if(["street","track","link","street_limited","service"].indexOf(feature.class)>=0){
 			color="black";
 			width=5;
+			visibility="visible";
 		}
 	}
 	if(map.getView().getZoom()>=13){
-		if(feature.get("class")=="secondary"||feature.get("class")=="trunk"||feature.get("class")=="primary"||feature.get("class")=="tertiary"){
+		if(["secondary","trunk","primary","tertiary"].indexOf(feature.class)>=0){
 			color="black";
 			width=5;
+			visibility="visible";
 		}
 	}
 	if(map.getView().getZoom()>=10){
-		if(feature.get("class")=="motorway"){
+		if(["motorway"].indexOf(feature.class)>=0){
 			color="black";
 			width=5;
+			visibility="visible";
 		}
 	}
-	return[new ol.style.Style({
-		stroke: new ol.style.Stroke({
-			color: color,
-			width: width,
-			lineCap: "square",
-		})
-	})];
+	return {color:color,width:width,visibility:visibility};
 }
 
 function mapboxSelectRoadStyle(feature){
-	// console.log(feature);
 	let color = "#00000000";
 	let width = 0;
-	let temp=$("#layer").val();
-	for(value in temp){
-		if(feature.get("class")==temp[value]){
+	let visibility="invisible";
+	let select=$("#layer").val();
+	for(value in select){
+		if(feature.class==select[value]){
 			color="black";
 			width=5;
+			visibility="visible";
 		}
 	}
-	return[new ol.style.Style({
-		stroke: new ol.style.Stroke({
-			color: color,
-			width: width,
-			lineCap: "square",
-		})
-	})];
+	return {color:color,width:width,visibility:visibility};
 }
 
 let mapboxRoadLayer = new ol.layer.VectorTile({
@@ -218,44 +207,39 @@ let mapboxRoadLayer = new ol.layer.VectorTile({
 		'© <a href="https://www.openstreetmap.org/copyright">' +
 		'OpenStreetMap contributors</a>',
 		format: new ol.format.MVT({layers:"road"}),
-		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/' +'{z}/{x}/{y}.vector.pbf?access_token=' + mapboxApiKey,
+		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/{z}/{x}/{y}.vector.pbf?access_token=' + mapboxApiKey,
 	}),
 	style:function(feature,resolution){
+		let style;
 		if($(".layerconfig").prop('checked')){
-			return mapboxSelectRoadStyle(feature);
+			style= mapboxSelectRoadStyle(feature.properties_);
 		}else{
-			return mapboxAutoRoadStyle(feature);
+			style= mapboxAutoRoadStyle(feature.properties_);
 		}
+		return[new ol.style.Style({
+		stroke: new ol.style.Stroke({
+			color: style.color,
+			width: style.width,
+			lineCap: "square",
+		})
+	})];
 	}
 });
-//1.2.2.2 鉄道
+
 let mapboxRailLayer = new ol.layer.VectorTile({
 	source: new ol.source.VectorTile({
 		attributions: '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> ' +
 		'© <a href="https://www.openstreetmap.org/copyright">' +
 		'OpenStreetMap contributors</a>',
 		format: new ol.format.MVT({layers:"road"}),
-		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/' +'{z}/{x}/{y}.vector.pbf?access_token=' + mapboxApiKey,
+		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/{z}/{x}/{y}.vector.pbf?access_token=' + mapboxApiKey,
 	}),
 	style:function(feature,resolution){
 		let color="#00000000";
 		let width=0;
-		if(feature.properties_.class=="major_rail"||feature.properties_.class=="minor_rail"){
+		if(["major_rail","minor_rail"].indexOf(feature.get("class"))>=0){
 			color="black";
-			switch(map.getView().getZoom()){
-				case 19:
-					width=5;
-					break;
-				case 18:
-					width=5;
-					break;
-				case 17:
-					width=5;
-					break;
-				case 16:
-					width=5;
-					break;
-			}
+			width=5;
 		}
 		return[new ol.style.Style({
 			stroke: new ol.style.Stroke({
@@ -267,14 +251,14 @@ let mapboxRailLayer = new ol.layer.VectorTile({
 		})];
 	}
 });
-//1.2.2.3 河川
+
 let mapboxWaterLayer = new ol.layer.VectorTile({
 	source: new ol.source.VectorTile({
 		attributions: '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> ' +
 		'© <a href="https://www.openstreetmap.org/copyright">' +
 		'OpenStreetMap contributors</a>',
 		format: new ol.format.MVT({layers:"waterarea"}),
-		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/' +'{z}/{x}/{y}.vector.pbf?access_token=' + mapboxApiKey,
+		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/{z}/{x}/{y}.vector.pbf?access_token=' + mapboxApiKey,
 	}),
 	style:function(feature,resolution){
 		let color="#00000000";
@@ -292,5 +276,3 @@ let mapboxWaterLayer = new ol.layer.VectorTile({
 		})];
 	}
 });
-//1.2 END
-//1.END
