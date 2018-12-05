@@ -99,3 +99,6 @@ layersSet();
 
 // 設定パネルの「サイズ・枠」を非表示にしておく
 controlDisplay("gridDisplay","none");
+$(window)
+	.scrollTop($("#main").offset().top)
+	.scrollLeft($("#main").offset().left);
