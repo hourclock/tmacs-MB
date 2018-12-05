@@ -136,7 +136,7 @@ let gsiWaterLayer = new ol.layer.VectorTile({
 		attributions:  "<a href='http://maps.gsi.go.jp/development/ichiran.html' target='_blank'>地理院タイル</a>",
 		format: new ol.format.GeoJSON(),
 		projection: 'EPSG:3857',
-		tileGrid: new ol.tilegrid.createXYZ({minZoom: 16, maxZoom: 16}),
+		tileGrid: new ol.tilegrid.createXYZ({}),
 		url: 'http://cyberjapandata.gsi.go.jp/xyz/experimental_rvrcl/{z}/{x}/{y}.geojson'
 	}),
 	style:function(feature){

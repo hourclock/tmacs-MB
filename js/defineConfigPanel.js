@@ -115,6 +115,21 @@ $(function() {
 				);
 			}
 			$('#layer').multiselect('rebuild')
+		}else if(Status.tactile=="gsi"){
+			if(map.getView().getZoom()<=15){
+				$(function(){$("#warning").bPopup({})});
+			}
+			gsiCreateSvg();
+			gsiRoadLayer.getSource().changed();
+			$("select#layer option").remove();
+			for(value in gsiRoadContents){
+				$("#layer").append(
+					$("<option/>").val(gsiRoadContents[value]).append(
+						gsiRoadContents[value]
+					)
+				);
+			}
+			$('#layer').multiselect('rebuild')
 		}
 		layersSet();
 		console.log("CHANGE BASE LAYER:"+this.value);
