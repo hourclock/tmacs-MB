@@ -37,7 +37,7 @@
 		<div class="main">
 			<div class="row">
 				<!-- <div class="col-md-1"></div> -->
-				<div class="col-md-8">
+				<div class="col-lg-8">
 					<div  class="row">
 						<div id="map-row" class="col-md-12">
 								<div id="grid-container">
@@ -56,7 +56,7 @@
 				</div>
 
 				<!-- 設定パネル -->
-				<div class="col-md-4">
+				<div class="col-lg-4">
 					<div class="noprint">
 						<div class="row">
 							<div class="col-md-12">
@@ -191,6 +191,7 @@
 															<label class="btn btn-primary"><input type="button" value="5">5×6</input></label>
 															<label class="btn btn-primary"><input type="button" value="frame-on">枠あり</input></label>
 															<label class="btn btn-primary"><input type="button" value="frame-off">枠なし</input></label>
+															<p>目盛りは印刷にのみ反映されます。</p>
 														</div>
 													</td>
 												</tr>
@@ -265,10 +266,21 @@
 		<!-- SVG出力用（非表示） -->
 		<div class="noprint">
 			<div id="svg_export" class="chartcontainer"></div>
+			<div id="warning">
+				<div>
+					<p>GSIのままでは小縮尺で動作が遅くなる恐れがあります。mapboxへ変更しますか？</p>
+					<div id="warning-input" class="btn-group" data-toggle="buttons">
+						<label class="btn btn-primary"><input type="radio" name="options" autocomplete="off" value="mapbox"> Mapboxへ変更</label>
+						<label class="btn btn-primary"><input type="radio" name="options" autocomplete="off" value="gsi"> そのまま続ける</label>
+					</div>
+					<a id="b-close" class="b-close">x<a/>
+				<div>
+			</div>
 		</div>
 	</div>
 
 <!-- （変数の関係で）読み込む順番を変えないこと -->
+	<script type="text/javascript" src="countries.js"></script>
 	<script type="text/javascript" src="js/defineMapLayer.js"></script>
 	<script type="text/javascript" src="js/defineFunction.js"></script>
 	<script type="text/javascript" src="js/defineMapObject.js"></script>

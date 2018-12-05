@@ -67,13 +67,13 @@ $(function() {
 		}else{
 			controlDisplay("tactileLayer","");
 		}
-		// document.getElementById("tactile-table").style.display=(Status["tactile"]=="none")?'none':'';
-		// document.getElementById("layerconfig").style.display=(Status["tactile"]=="none")?'none':'';
-		layersSet();
 		if(Status.tactile=="gsi"){
+			if(map.getView().getZoom()<=15){
+				$(function(){$("#warning").bPopup({})});
+			}
 			gsiCreateSvg();
-			$("select#layer option").remove();
 			gsiRoadLayer.getSource().changed();
+			$("select#layer option").remove();
 			for(value in gsiRoadContents){
 				$("#layer").append(
 					$("<option/>").val(gsiRoadContents[value]).append(
@@ -84,8 +84,8 @@ $(function() {
 			$('#layer').multiselect('rebuild')
 		}else if(Status.tactile=="mapbox"){
 			mapboxCreateSvg();
-			$("select#layer option").remove();
 			mapboxRoadLayer.getSource().changed();
+			$("select#layer option").remove();
 			for(value in mapboxRoadContents){
 				$("#layer").append(
 					$("<option/>").val(mapboxRoadContents[value]).append(
@@ -95,6 +95,28 @@ $(function() {
 			}
 			$('#layer').multiselect('rebuild')
 		}
+		layersSet();
+		console.log("CHANGE BASE LAYER:"+this.value);
+	});
+});
+
+$(function() {
+	$('#warning-input input[type=radio]').change(function() {
+		Status.tactile=this.value;
+		if(Status.tactile=="mapbox"){
+			mapboxCreateSvg();
+			mapboxRoadLayer.getSource().changed();
+			$("select#layer option").remove();
+			for(value in mapboxRoadContents){
+				$("#layer").append(
+					$("<option/>").val(mapboxRoadContents[value]).append(
+						mapboxRoadContents[value]
+					)
+				);
+			}
+			$('#layer').multiselect('rebuild')
+		}
+		layersSet();
 		console.log("CHANGE BASE LAYER:"+this.value);
 	});
 });
@@ -234,18 +256,13 @@ $(function(){
 		//プリント
 		if( this.value == "print" ){
 			console.log("SAVE:PRINT");
-			// let width = $("#map").width();
-			// let height = $("#map").height();
-			// if(height*Math.sqrt(2)>=width){
-			// 	$("#grid-container").height(680);
-			// 	$("#grid-container").width(width*680/height);
-			// }else{
-			// 	$("#grid-container").height(height*849/width);
-			// 	$("#grid-container").width(849);
-			// }
-			window.print();//印刷呼び出し
-			// $("#grid-container").height("");
-			// $("#grid-container").width("");
+			let width = $("#grid-container").width();
+			let height = $("#grid-container").height();
+			let a4Height=172*92/25.4;
+			let a4Width=251*92/25.4;
+			$("#grid-container").height(a4Height);
+			$("#grid-container").width(width*a4Height/height);
+			window.print();
 		//PNG出力
 		}else if( this.value == "png" ){
 			console.log("SAVE:PNG");
@@ -267,7 +284,7 @@ $(function(){
 			map.render();
 		//SVG出力
 		}else if( this.value == "svg" ){
-			console.log("SAVE:SVG")
+			console.log("SAVE:SVG");
 			let width = $("#map").width();
 			let height = $("#map").height();
 			$("#svg_image").attr("xlink:href",createDataUrl())

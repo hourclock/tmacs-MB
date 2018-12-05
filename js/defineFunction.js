@@ -180,15 +180,6 @@ function gsiCreateSvg(){
 				g.selectAll(".road")
 					.data(json.features.filter(
 						function(feature){
-							// if(map.getView().getZoom()>=16){
-							// 	return true
-							// }else if(16>map.getView().getZoom()&&map.getView().getZoom()>=14){
-							// 	return feature.properties.rdCtg == "国道"||feature.properties.rdCtg=="都道府県道"||feature.properties.rdCtg=="高速自動車国道等"||feature.properties.rnkWidth=="5.5m-13m未満"||feature.properties.rnkWidth=="13m-19.5m未満";
-							// }else if(14>map.getView().getZoom()&&map.getView().getZoom()>=12){
-							// 	return feature.properties.rdCtg == "国道"||feature.properties.rdCtg=="都道府県道"||feature.properties.rdCtg=="高速自動車国道等";
-							// }else{
-							// 	return feature.properties.rdCtg == "国道"||feature.properties.rdCtg=="都道府県道";
-							// }
 							let style;
 							if($(".layerconfig").prop('checked')){
 								style = gsiSelectRoadStyle(feature.properties);
@@ -218,7 +209,7 @@ function mapboxCreateSvg(){
 	let tau = 2 * pi;
 
 	// 表示するズームレベルとタイルを取得するズームレベルを別個に定義
-	let zoom = {view: map.getView().getZoom(), tile: 16};
+	let zoom = {view: map.getView().getZoom(), tile: map.getView().getZoom()};
 
 	let center = ol.proj.transform(map.getView().getCenter(),"EPSG:3857","EPSG:4326");
 
@@ -278,12 +269,16 @@ function mapboxCreateSvg(){
 				g.selectAll(".road")
 					.data(json.features.filter(
 						function(feature){
-							if(map.getView().getZoom()>=16){
-								return feature.properties.class=="street"||feature.properties.class=="track"||feature.properties.class=="link"||feature.properties.class=="street_limited"||feature.properties.class=="service"||feature.properties.class=="secondary"||feature.properties.class=="trunk"||feature.properties.class=="primary"||feature.properties.class=="tertiary"||feature.properties.class=="motorway";
-							}else if(16>map.getView().getZoom()||map.getView().getZoom()>=13){
-								return feature.properties.class=="secondary"||feature.properties.class=="trunk"||feature.properties.class=="primary"||feature.properties.class=="tertiary"||feature.properties.class=="motorway";
-							}else if(13>map.getView().getZoom()||map.getView().getZoom()>=10){
-								return feature.properties.class=="motorway";
+							let style;
+							if($(".layerconfig").prop('checked')){
+								style = mapboxSelectRoadStyle(feature.properties);
+							}else{
+								style = mapboxAutoRoadStyle(feature.properties);
+							}
+							if(style.visibility=="visible"){
+								return true;
+							}else{
+								return false;
 							}
 						}
 					))

@@ -10,16 +10,21 @@ let defaultCenter = [
 let viewConfig = new ol.View({
 	projection: "EPSG:3857",
 	center: ol.proj.transform(defaultCenter, "EPSG:4326", "EPSG:3857"),
-	maxZoom: 19,
-	minZoom: 10,
+	maxZoom: 21,
+	// minZoom: 10,
 	zoom: 16,
 	rotation: 0,
 });
 
 //地図の高さは画面の高さの9割。微妙に上下の解説の枠が入るのが気になる。
-$("#map").height($(window).height()*0.9);
+$("#grid-container").height($("#map-row").width()/Math.sqrt(2));
 $(window).resize(function(){
-	$("#map").height($(window).height()*0.9);
+	$("#grid-container").height($("#map-row").width()/Math.sqrt(2));
+});
+
+$("#grid-container").width($("#map-row").width());
+$(window).resize(function(){
+	$("#grid-container").width($("#map-row").width());
 });
 
 //マップを<div id="map">に生成
@@ -45,6 +50,9 @@ map.on("moveend",
 		$("#rotate_input").val(Math.round(map.getView().getRotation()*180/Math.PI));//角度を更新
 		if(Status.tactile=="gsi"){//現在の触地図レイヤに応じてSVG出力用に描写
 			gsiCreateSvg();
+			if(map.getView().getZoom()==15){
+				$("#warning").bPopup({});
+			}
 		}else if(Status.tactile=="mapbox"){
 			mapboxCreateSvg();
 		}

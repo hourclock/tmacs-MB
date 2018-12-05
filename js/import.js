@@ -5,6 +5,7 @@ document.write('<script src="js/lib/popper.js"></script>');
 document.write('<script src="js/lib/jquery-3.3.1.min.js"></script>');
 //jQuery Plugin
 document.write('<script type="text/javascript" src="js/lib/jquery.complete.js"></script>');
+document.write('<script type="text/javascript" src="js/lib/jquery.bpopup.min.js"></script>');
 //BootStrap
 document.write('<link rel="stylesheet" href="css/bootstrap.css" type="text/css">');
 document.write('<script src="js/lib/bootstrap.js"></script>');
