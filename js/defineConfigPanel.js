@@ -2,18 +2,18 @@
 $(function(){//検索が押されたら候補用のドロップダウンを表示
 	let resultContainer;
 	$("#addr").focus();
-	$('#search button[type=button]').on("click", function(event){
+	$('#search button[type=button]').on("click", function(event){//検索ボタンを押したとき
 		resultContainer=search(event);
 	});
-	$('#search input[type=text]').complete(function(event){
+	$('#search input[type=text]').complete(function(event){//検索パネルで文字入力しエンターを押したとき
 		resultContainer=search(event);
 	});
 
-	$(document).on("click", "#dropdown li" ,function() {
-		setCenter(map,resultContainer.features[$(this).val()].center);
+	$(document).on("click", "#dropdown li" ,function() {//検索候補をクリックしたとき
+		setCenter(map , resultContainer.features[$(this).val()].center);
 	});
 
-	$('#place input[type=button]').on("click", function() {
+	$('#place input[type=button]').on("click", function() {//現在位置ボタンを押したとき
 		place();
 	});
 });
@@ -39,97 +39,29 @@ $("input[name='opacity']").TouchSpin({
 });
 $(function() {
 	$('#opacity_input').change(function() {
-		if(checkCharType(this.value,"zenkaku")){
-			let num = this.value.replace(/[Ａ-Ｚａ-ｚ０-９]/g,
-				function(s){
-					return String.fromCharCode(s.charCodeAt(0) - 65248);
-				}
-			);
-			$('#opacity_input').val(num);
-			for(backID in Layers.back){
-				Layers.back[backID].setOpacity(num/100);
-			}
-		}else{
-			for(backID in Layers.back){
-				Layers.back[backID].setOpacity(this.value/100);
-			}
+		let opacity =zenkakuToHankaku(this.value);
+		$('#opacity_input').val(opacity);
+		for(backID in Layers.back){
+			Layers.back[backID].setOpacity(this.value/100);
 		}
+
 	});
 });
 //3.3 END
 //3.4 触地図
 //触地図のon/off
 $(function() {
-	$('#tactile input[type=radio]').change(function() {
-		Status.tactile=this.value;
+	$('#tactile').change(function() {
+		Status.tactile=( $(this).prop('checked') )?"mapbox":"none";
 		if(Status.tactile=="none"){
 			controlDisplay("tactileLayer","none");
 		}else{
 			controlDisplay("tactileLayer","");
 		}
-		if(Status.tactile=="gsi"){
-			if(map.getView().getZoom()<=15){
-				$(function(){$("#warning").bPopup({})});
-			}
-			gsiCreateSvg();
-			gsiRoadLayer.getSource().changed();
-			$("select#layer option").remove();
-			for(value in gsiRoadContents){
-				$("#layer").append(
-					$("<option/>").val(gsiRoadContents[value]).append(
-						gsiRoadContents[value]
-					)
-				);
-			}
-			$('#layer').multiselect('rebuild')
-		}else if(Status.tactile=="mapbox"){
-			mapboxCreateSvg();
-			mapboxRoadLayer.getSource().changed();
-			$("select#layer option").remove();
-			for(value in mapboxRoadContents){
-				$("#layer").append(
-					$("<option/>").val(mapboxRoadContents[value]).append(
-						mapboxRoadContents[value]
-					)
-				);
-			}
-			$('#layer').multiselect('rebuild')
-		}
-		layersSet();
-		console.log("CHANGE BASE LAYER:"+this.value);
-	});
-});
 
-$(function() {
-	$('#warning-input input[type=radio]').change(function() {
-		Status.tactile=this.value;
 		if(Status.tactile=="mapbox"){
 			mapboxCreateSvg();
 			mapboxRoadLayer.getSource().changed();
-			$("select#layer option").remove();
-			for(value in mapboxRoadContents){
-				$("#layer").append(
-					$("<option/>").val(mapboxRoadContents[value]).append(
-						mapboxRoadContents[value]
-					)
-				);
-			}
-			$('#layer').multiselect('rebuild')
-		}else if(Status.tactile=="gsi"){
-			if(map.getView().getZoom()<=15){
-				$(function(){$("#warning").bPopup({})});
-			}
-			gsiCreateSvg();
-			gsiRoadLayer.getSource().changed();
-			$("select#layer option").remove();
-			for(value in gsiRoadContents){
-				$("#layer").append(
-					$("<option/>").val(gsiRoadContents[value]).append(
-						gsiRoadContents[value]
-					)
-				);
-			}
-			$('#layer').multiselect('rebuild')
 		}
 		layersSet();
 		console.log("CHANGE BASE LAYER:"+this.value);
@@ -139,20 +71,38 @@ $(function() {
 //3.5 レイヤ
 //触地図レイヤーのon/off(未完成)
 $(function() {
-	$('#tactile-water').change(function() {
-		Status["switch"]["water"]=( $(this).prop('checked') )?"ON":"OFF";
+	$('#tactile-river').change(function() {
+		Status["switch"]["river"]=( $(this).prop('checked') )?"ON":"OFF";
 		layersSet();
 	});
-});
-$(function() {
+
 	$('#tactile-railway').change(function() {
 		Status["switch"]["rail"]=( $(this).prop('checked') )?"ON":"OFF";
 		layersSet();
 	});
-});
-$(function() {
+
 	$('#tactile-road').change(function() {
 		Status["switch"]["road"]=( $(this).prop('checked') )?"ON":"OFF";
+		layersSet();
+	});
+
+	$('#tactile-all').change(function() {
+		Status["switch"]["all"]=( $(this).prop('checked') )?"ON":"OFF";
+		layersSet();
+	});
+
+	$('#tactile-building').change(function() {
+		Status["switch"]["building"]=( $(this).prop('checked') )?"ON":"OFF";
+		layersSet();
+	});
+
+	$('#tactile-coastline').change(function() {
+		Status["switch"]["coastline"]=( $(this).prop('checked') )?"ON":"OFF";
+		layersSet();
+	});
+
+	$('#tactile-admin').change(function() {
+		Status["switch"]["admin"]=( $(this).prop('checked') )?"ON":"OFF";
 		layersSet();
 	});
 });
@@ -163,9 +113,6 @@ $(function() {
 		if(Status.tactile=="mapbox"){
 			mapboxRoadLayer.getSource().changed();
 			mapboxCreateSvg();
-		}else if(Status.tactile=="gsi"){
-			gsiRoadLayer.getSource().changed();
-			gsiCreateSvg();
 		}
 	});
 });
@@ -180,7 +127,6 @@ $(function() {
 			$("#layer").multiselect("disable");
 		}
 		mapboxRoadLayer.getSource().changed();
-		gsiRoadLayer.getSource().changed();
 	});
 });
 
@@ -193,17 +139,9 @@ $("input[name='rotate']").TouchSpin({
 });
 $(function() {
 	$('#rotate_input').change(function() {
-		if(checkCharType(this.value,"zenkaku")){
-			let num = this.value.replace(/[Ａ-Ｚａ-ｚ０-９]/g,
-				function(s){
-					return String.fromCharCode(s.charCodeAt(0) - 65248);
-				}
-			);
-			$('#rotate_input').val(num);
-			map.getView().setRotation( num * Math.PI / 180 );
-		}else{
-			map.getView().setRotation( this.value * Math.PI / 180 );
-		}
+		let degree=zenkakuToHankaku(this.value);
+		$("rotate_input").val(degree);
+		map.getView().setRotation( degree * Math.PI / 180);
 	});
 });
 //3.6 END
@@ -217,17 +155,9 @@ $("input[name='scale']").TouchSpin({
 });
 $(function() {
 	$('#scale_input').on("change",function() {
-		if(checkCharType(this.value,"zenkaku")){
-			let num = this.value.replace(/[Ａ-Ｚａ-ｚ０-９]/g,
-				function(s){
-					return String.fromCharCode(s.charCodeAt(0) - 65248);
-				}
-			);
-			$('#scale_input').val(num);
-			map.getView().setZoom( num );
-		}else{
-			map.getView().setZoom(this.value);
-		}
+		let zoom = zenkakuToHankaku(this.value);
+		$('#scale_input').val(zoom);
+		map.getView().setZoom(zoom);
 	});
 });
 //3.7 END
@@ -248,16 +178,16 @@ $(function() {
 //目盛り変更
 $(function() {
 	$('#grid input[type=button]').change(function(){
+		function setFrame(state){
+			document.getElementById('top').style.borderBottom=state;
+			document.getElementById('left').style.borderRight=state;
+			document.getElementById('right').style.borderLeft=state;
+			document.getElementById('bottom').style.borderTop=state;
+		}
 		if(this.value=="frame-on"){
-			document.getElementById('top').style.borderBottom="1mm solid #000000";
-			document.getElementById('left').style.borderRight="1mm solid #000000";
-			document.getElementById('right').style.borderLeft="1mm solid #000000";
-			document.getElementById('bottom').style.borderTop="1mm solid #000000";
+			setFrame("1mm solid #000000");
 		}else if(this.value=="frame-off"){
-			document.getElementById('top').style.borderBottom="";
-			document.getElementById('left').style.borderRight="";
-			document.getElementById('right').style.borderLeft="";
-			document.getElementById('bottom').style.borderTop="";
+			setFrame("");
 		}else{
 			$('#top,#bottom').css("background-size","calc(100%/"+String(Number(this.value)+1)+") 100%");
 			$('#left,#right').css("background-size","100% calc(100%/"+this.value+")");
@@ -300,14 +230,7 @@ $(function(){
 		//SVG出力
 		}else if( this.value == "svg" ){
 			console.log("SAVE:SVG");
-			let width = $("#map").width();
-			let height = $("#map").height();
-			$("#svg_image").attr("xlink:href",createDataUrl())
-						.attr("x","0")
-						.attr("y","0")
-						.attr("height",height)
-						.attr("width",width);
-			let text = $("#svg_export").html();
+			let text = svgToText();
 			let blob = new Blob([text],{type:"text/plain"});
 			if(window.navigator.msSaveBlob){
 				window.navigator.msSaveBlob(blob,"tmacs.svg");
@@ -316,14 +239,7 @@ $(function(){
 			}
 		}else if( this.value=="mouri"){
 			console.log("SAVE:SessionStorage");
-			let width = $("#map").width();
-			let height = $("#map").height();
-			$("#svg_image").attr("xlink:href",createDataUrl())
-						.attr("x","0")
-						.attr("y","0")
-						.attr("height",height)
-						.attr("width",width);
-			let text = $("#svg_export").html();
+			let text = svgToText();
 			if( ('sessionStorage' in window) && (window.sessionStorage !== null) ) {
 				sessionStorage.clear();
 				sessionStorage["tmacs"]=text;
@@ -336,3 +252,26 @@ $(function(){
 	});
 });
 //3.9 END
+
+//道路をクリックした際に消したりする機能（予想以上に使えないので消すかも）
+  map.on('click', function(event) {
+	var features = map.getFeaturesAtPixel(event.pixel);
+	console.log(features);
+
+	if (!features) {
+	  selection = {};
+
+	  mapboxRoadLayer.setStyle(mapboxRoadLayer.getStyle());
+	  return;
+	}
+	var feature = features[0];
+
+	// console.log(feature);
+
+	var fid = feature.id_;
+	// console.log(fid);
+
+	selection[fid] = feature;
+
+	mapboxRoadLayer.setStyle(mapboxRoadLayer.getStyle());
+  });
