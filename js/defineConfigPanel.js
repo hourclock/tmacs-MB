@@ -241,7 +241,6 @@ $(function(){
 			console.log("SAVE:SessionStorage");
 			let text = svgToText();
 			if( ('sessionStorage' in window) && (window.sessionStorage !== null) ) {
-				sessionStorage.clear();
 				sessionStorage["tmacs"]=text;
 				window.location.href ='https://stevenyuta.github.io/tactilemapyuta';
 			} else {
