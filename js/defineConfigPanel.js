@@ -243,7 +243,7 @@ $(function(){
 			if( ('sessionStorage' in window) && (window.sessionStorage !== null) ) {
 				sessionStorage.clear();
 				sessionStorage["tmacs"]=text;
-				window.open('https://stevenyuta.github.io/tactilemapyuta', '_blank');
+				window.location.href ='https://stevenyuta.github.io/tactilemapyuta';
 			} else {
 				alart("利用できません");
 			}
