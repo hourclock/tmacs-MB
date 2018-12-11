@@ -44,7 +44,7 @@ function mapboxAutoRoadStyle(feature){
 	let width = 0;
 	let visibility="invisible";
 	if(map.getView().getZoom()>=16){
-		if(["street","track","link","street_limited","service"].indexOf(feature.class)>=0){
+		if(["street","track","link","street_limited","service","path"].indexOf(feature.class)>=0){
 			color="black";
 			width=5;
 			visibility="visible";
@@ -134,9 +134,10 @@ let mapboxRailLayer = new ol.layer.VectorTile({
 			color="black";
 			width=5;
 		}
+		var selected = !!selection[feature.id_];
 		return[new ol.style.Style({
 			stroke: new ol.style.Stroke({
-				color: color,
+				color: selected?"#00000000":color,
 				width: width,
 				lineCap: "square",
 				lineDash:[10,20],
@@ -159,14 +160,16 @@ let mapboxRiverLayer = new ol.layer.VectorTile({
 		let color="#00000000";
 		let width=0;
 		if(map.getView().getZoom()>=16&&feature.properties_.layer==="waterway"){
-			color="aqua";
+			color="black";
 			width=5;
 		}
+		var selected = !!selection[feature.id_];
 		return[new ol.style.Style({
 			stroke: new ol.style.Stroke({
-				color: color,
+				color: selected?"#00000000":color,
 				width: width,
 				lineCap: "square",
+				lineDash:[10,20],
 			})
 		})];
 	}
@@ -186,12 +189,13 @@ let mapboxAllLayer = new ol.layer.VectorTile({
 		let color="#00000000";
 		let width=0;
 		// if(["major_rail","minor_rail"].indexOf(feature.get("class"))>=0){
-			color="pink";
+			color="black";
 			width=3;
 		// }
+		var selected = !!selection[feature.id_];
 		return[new ol.style.Style({
 			stroke: new ol.style.Stroke({
-				color: color,
+				color: selected?"#00000000":color,
 				width: width,
 				lineCap: "square",
 				// lineDash:[10,20],
@@ -214,12 +218,13 @@ let mapboxBuildingLayer = new ol.layer.VectorTile({
 		let color="#00000000";
 		let width=0;
 		// if(["major_rail","minor_rail"].indexOf(feature.get("class"))>=0){
-			color="orange";
+			color="black";
 			width=3;
 		// }
+		var selected = !!selection[feature.id_];
 		return[new ol.style.Style({
 			stroke: new ol.style.Stroke({
-				color: color,
+				color: selected?"#00000000":color,
 				width: width,
 				lineCap: "square",
 				// lineDash:[10,20],
@@ -242,12 +247,13 @@ let mapboxCoastlineLayer = new ol.layer.VectorTile({
 		let color="#00000000";
 		let width=0;
 		// if(map.getView().getZoom()>=16&&feature.properties_.layer==="waterway"){
-			color="blue";
+			color="black";
 			width=5;
 		// }
+		var selected = !!selection[feature.id_];
 		return[new ol.style.Style({
 			stroke: new ol.style.Stroke({
-				color: color,
+				color: selected?"#00000000":color,
 				width: width,
 				lineCap: "square",
 			})
@@ -269,15 +275,50 @@ let mapboxAdminLayer = new ol.layer.VectorTile({
 		let color="#00000000";
 		let width=0;
 		// if(map.getView().getZoom()>=16&&feature.properties_.layer==="waterway"){
-			color="teal";
+			color="black";
 			width=8;
 		// }
+		var selected = !!selection[feature.id_];
 		return[new ol.style.Style({
 			stroke: new ol.style.Stroke({
-				color: color,
+				color: selected?"#00000000":color,
 				width: width,
 				lineCap: "square",
 			})
 		})];
 	}
+});
+
+
+
+
+let marker=[];
+
+var iconStyle = [
+new ol.style.Style({
+		image: new ol.style.Circle({
+			fill: new ol.style.Fill({
+				color: "white",
+			}),
+			stroke: new ol.style.Stroke({
+				color: "black",
+				width: 6,
+		}),
+		radius:20,
+		})
+}),
+new ol.style.Style({
+		image: new ol.style.Circle({
+			fill: new ol.style.Fill({
+				color: "black",
+			}),
+			stroke: new ol.style.Stroke({
+				color: "white",
+				width: 6,
+		}),
+		radius:12,
+		})
+})];
+
+var vectorLayer = new ol.layer.Vector({
 });

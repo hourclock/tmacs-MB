@@ -131,10 +131,11 @@
 															<input id="tactile-river" type="checkbox" checked data-toggle="toggle" data-size="normal" value="river" data-on="河川" data-off="河川">
 															<input id="tactile-railway" type="checkbox" checked data-toggle="toggle" data-size="normal" value="rail" data-on="鉄道" data-off="鉄道">
 															<input id="tactile-road" type="checkbox" checked data-toggle="toggle" data-size="normal" value="road" data-on="道路" data-off="道路">
-															<input id="tactile-all" type="checkbox" checked data-toggle="toggle" data-size="normal" value="all" data-on="全て" data-off="全て">
-															<input id="tactile-building" type="checkbox" checked data-toggle="toggle" data-size="normal" value="building" data-on="建物" data-off="建物">
-															<input id="tactile-coastline" type="checkbox" checked data-toggle="toggle" data-size="normal" value="coastline" data-on="水域" data-off="水域">
-															<input id="tactile-admin" type="checkbox" checked data-toggle="toggle" data-size="normal" value="admin" data-on="国境" data-off="国境">
+															<br><br>
+															<input id="tactile-all" type="checkbox" data-toggle="toggle" data-size="normal" value="all" data-on="全て" data-off="全て">
+															<input id="tactile-building" type="checkbox" data-toggle="toggle" data-size="normal" value="building" data-on="建物" data-off="建物">
+															<input id="tactile-coastline" type="checkbox" data-toggle="toggle" data-size="normal" value="coastline" data-on="水域" data-off="水域">
+															<input id="tactile-admin" type="checkbox" data-toggle="toggle" data-size="normal" value="admin" data-on="国境" data-off="国境">
 														</div>
 													</td>
 												</tr>
@@ -196,6 +197,21 @@
 														</div>
 													</td>
 												</tr>
+												<tr>
+													<td>
+														<label>編集</label>
+													</td>
+													<td class="text-left">
+														<div>
+															<input id="edit" type="checkbox" data-toggle="toggle" data-size="normal">
+														</div>
+														<br>
+														<div id="edit-contents" class="btn-group edit" data-toggle="buttons">
+															<label class="btn btn-primary "><input type="radio" name="options" autocomplete="off" value="delete"> 削除</label>
+															<label class="btn btn-primary "><input type="radio" name="options" autocomplete="off" value="marker"> マーカー</label>
+														</div>
+													</td>
+												</tr>
 											</tbody>
 										</table>
 									</div>
@@ -218,7 +234,8 @@
 															<label class="btn btn-primary"><input type="button" value="print" >印刷</input></label>
 															<label class="btn btn-primary"><input type="button" value="png">PNG</input></label>
 															<label class="btn btn-primary"><input type="button" value="svg">SVG</input></label>
-															<label class="btn btn-primary"><input type="button" value="mouri">編集</input></label>
+															<label class="btn btn-primary"><input type="button" value="mouri">ブラウザに保存</input></label>
+															<label class="btn btn-primary"><input type="button" value="edit">編集</input></label>
 														</div>
 													</td>
 												</tr>

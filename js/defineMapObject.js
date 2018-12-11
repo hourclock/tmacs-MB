@@ -33,14 +33,25 @@ let map = new ol.Map({
 		zoom: false,
 		attributionOptions: {
 			collapsible: false
-		}
+		},
 	}),
 });
-map.getView().setMinZoom(5);
-map.getView().setMaxZoom(22);
+// map.getView().setMinZoom(5);
+// map.getView().setMaxZoom(22);
+
 //URLにズームレベルや座標を表示したいならol.hash(map)のコメントアウトを外す
 //（なぜか縮尺の上限下限を無視できるようになるため停止中）
 // ol.hash(map);
+
+//コピペだがこれで地図がダブルクリックでズームしなくなる。マーカーの削除にダブルクリックを使いたいためこれを用いた
+var dblClickInteraction;
+map.getInteractions().getArray().forEach(function(interaction) {
+  if (interaction instanceof ol.interaction.DoubleClickZoom) {
+    dblClickInteraction = interaction;
+  }
+});
+map.removeInteraction(dblClickInteraction);
+
 
 //mapの変更後に呼び出される
 map.on("moveend",
@@ -86,7 +97,8 @@ let Layers={
 			all:mapboxAllLayer,
 			building:mapboxBuildingLayer,
 			coastline:mapboxCoastlineLayer,
-			admin:mapboxAdminLayer
+			admin:mapboxAdminLayer,
+			vector:vectorLayer
 		}
 	}
 };
@@ -99,10 +111,11 @@ let Status = {
 		river:"ON",
 		rail:"ON",
 		road:"ON",
-		all:"ON",
-		building:"ON",
-		coastline:"ON",
-		admin:"ON"
+		all:"OFF",
+		building:"OFF",
+		coastline:"OFF",
+		admin:"OFF",
+		vector:"ON"
 	}
 };
 
@@ -110,6 +123,7 @@ layersSet();
 
 // 設定パネルの「サイズ・枠」を非表示にしておく
 controlDisplay("gridDisplay","none");
+controlDisplay("edit","none");
 
 //初回読み込み時に地図が画面の上部ピッタリに表示されるように。説明文とか名前とかより地図自体が大事だし。
 $(window)

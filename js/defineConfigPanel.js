@@ -237,7 +237,7 @@ $(function(){
 			}else{
 				saveAs(blob,"tmacs.svg");
 			}
-		}else if( this.value=="mouri"){
+		}/*else if( this.value=="mouri"){
 			console.log("SAVE:SessionStorage");
 			let text = svgToText();
 			if( ('sessionStorage' in window) && (window.sessionStorage !== null) ) {
@@ -247,30 +247,91 @@ $(function(){
 				alart("利用できません");
 			}
 
-		}
+		}*/
 	});
 });
 //3.9 END
 
-//道路をクリックした際に消したりする機能（予想以上に使えないので消すかも）
-  map.on('click', function(event) {
-	var features = map.getFeaturesAtPixel(event.pixel);
-	console.log(features);
+let editMode;
+$(function() {
+	$('#edit').change(function() {
+		if($("#edit").prop('checked')){
+			controlDisplay("edit","");
+		}else{
+			controlDisplay("edit","none");
+		}
+	});
 
-	if (!features) {
-	  selection = {};
+	$('#edit-contents input[type=radio]').change( function() {
+		editMode=this.value;
+	});
+});
 
-	  mapboxRoadLayer.setStyle(mapboxRoadLayer.getStyle());
-	  return;
+//編集機能（あとで関数か整理すること）
+  map.on('dblclick', function(event) {
+  	if($("#edit").prop("checked")){
+  		if(editMode=="marker"){
+			var features = map.getFeaturesAtPixel(event.pixel);
+			if(features[0].ol_uid!=null){
+				let markerId = features[0].ol_uid;
+				let deleteMarkerId;
+				for(key in marker){
+					if(marker[key].ol_uid==markerId){
+						deleteMarkerId=key;
+					}
+				}
+				marker.splice(deleteMarkerId,1);
+				var vectorSource = new ol.source.Vector({
+					features: marker
+				});
+				vectorLayer.setSource(vectorSource);
+				vectorLayer.getSource().changed();
+			}
+		}
 	}
-	var feature = features[0];
-
-	// console.log(feature);
-
-	var fid = feature.id_;
-	// console.log(fid);
-
-	selection[fid] = feature;
-
-	mapboxRoadLayer.setStyle(mapboxRoadLayer.getStyle());
   });
+
+map.on("singleclick",function(event){
+	if($("#edit").prop("checked")){
+		console.log(editMode);
+		if(editMode=="marker"){
+			var coordinate=event.coordinate;
+			var poi = new ol.Feature({
+				geometry: new ol.geom.Point(coordinate, 'XY'),
+			});
+			poi.setStyle(iconStyle);
+			marker.push(poi);
+			var vectorSource = new ol.source.Vector({
+				features: marker
+			});
+			vectorLayer.setSource(vectorSource);
+			vectorLayer.getSource().changed();
+		}
+		if(editMode=="delete"){
+			var features = map.getFeaturesAtPixel(event.pixel);
+			console.log(features);
+			if (!features) {
+				selection = {};
+				mapboxRiverLayer.setStyle(mapboxRiverLayer.getStyle());
+				mapboxRailLayer.setStyle(mapboxRailLayer.getStyle());
+				mapboxRoadLayer.setStyle(mapboxRoadLayer.getStyle());
+				mapboxAllLayer.setStyle(mapboxAllLayer.getStyle());
+				mapboxBuildingLayer.setStyle(mapboxBuildingLayer.getStyle());
+				mapboxCoastlineLayer.setStyle(mapboxCoastlineLayer.getStyle());
+				mapboxAdminLayer.setStyle(mapboxAdminLayer.getStyle());
+			  return;
+			}
+			var feature = features[0];
+			var fid = feature.id_;
+			selection[fid] = feature;
+			mapboxRiverLayer.setStyle(mapboxRiverLayer.getStyle());
+			mapboxRailLayer.setStyle(mapboxRailLayer.getStyle());
+			mapboxRoadLayer.setStyle(mapboxRoadLayer.getStyle());
+			mapboxAllLayer.setStyle(mapboxAllLayer.getStyle());
+			mapboxBuildingLayer.setStyle(mapboxBuildingLayer.getStyle());
+			mapboxCoastlineLayer.setStyle(mapboxCoastlineLayer.getStyle());
+			mapboxAdminLayer.setStyle(mapboxAdminLayer.getStyle());
+		}
+	}
+});
+
