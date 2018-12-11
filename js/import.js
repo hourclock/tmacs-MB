@@ -26,10 +26,7 @@ document.write('<script src="https://d3js.org/d3.v4.min.js"></script>');
 document.write('<script src="https://d3js.org/d3-tile.v0.0.min.js"></script>');
 //D3プラグイン(browserifyによりbundle済み)
 document.write('<script type="text/javascript" src="js/lib/vt2geojson_bundle.js"></script>');
-//謎（たぶんcanvasとかファイルの保存とかに使ってると思う。多分。）
+//謎（たぶんcanvasとかファイルの保存に使ってると思う。多分。）
 document.write('<script src="js/lib/canvas-toBlob.js"></script>');
 document.write('<script src="js/lib/FileSaver.min.js"></script>');
 document.write('<script src="js/lib/svg.js"></script>');
-//デザイン用・印刷用CSS
-document.write('<link rel="stylesheet" href="css/for_printer.css" media="print" type="text/css">');
-document.write('<link rel="stylesheet" href="css/default.css" type="text/css">');
