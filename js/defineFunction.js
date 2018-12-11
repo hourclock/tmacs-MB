@@ -18,7 +18,7 @@ function place(){
 			setCenter(map,[lng,lat]);
 		},
 		function(position){//現在位置取得が失敗したら呼び出される
-			console.log("位置情報取得に失敗しました。");
+			alert("位置情報取得に失敗しました。");
 		});
 }
 
@@ -89,6 +89,19 @@ function checkCharType(input, charType) {
 	}
 }
 
+function zenkakuToHankaku(str){
+	if(checkCharType(str,"zenkaku")){
+		let num = str.replace(/[Ａ-Ｚａ-ｚ０-９]/g,
+			function(s){
+				return String.fromCharCode(s.charCodeAt(0) - 65248);
+			}
+		);
+		return num;
+	}else{
+		return str;
+	}
+}
+
 //現在表示されている背景画像を取得DataURL化
 function createDataUrl(){
 	for(layer in Status.switch){
@@ -109,96 +122,6 @@ function createDataUrl(){
 	return base_url;
 }
 
-function refreshSvg(){
-
-}
-
-//GSIレイヤをSVG形式でD3で描写
-function gsiCreateSvg(){
-	$("#svg_export").empty();
-	let width = $("#map").width();
-	let height = $("#map").height();
-	let pi = Math.PI;
-	let tau = 2 * pi;
-
-	// 表示するズームレベルとタイルを取得するズームレベルを別個に定義
-	let zoom = {view: map.getView().getZoom(), tile: 16};
-
-	let center = ol.proj.transform(map.getView().getCenter(),"EPSG:3857","EPSG:4326");
-
-	// ズームレベルの差をdzとすると、2^dzを変数magで定義
-	let mag = Math.pow(2, zoom.tile - zoom.view);
-
-	// projectionのスケールは表示するズームレベルを指定
-	let projection = d3.geoMercator()
-		.center(center)
-		.scale(256 * Math.pow(2, zoom.view) / tau)
-		.translate([width / 2, height / 2]);
-
-	let path = d3.geoPath()
-		.projection(projection);
-
-	// d3.tile()のサイズにmagを掛ける
-	let tile = d3.tile()
-		.size([width * mag, height * mag]);
-
-	let bbox ="0 0 "+width+" "+height;
-	let map_svg = d3.select(".chartcontainer").append("svg")
-			.attr("class", "map")
-			.attr("width", width)
-			.attr("height", height)
-			.attr("xmlns","http://www.w3.org/2000/svg")
-			.attr("xmlns:xlink","http://www.w3.org/1999/xlink")
-			.attr("viewBox",bbox);
-
-	map_svg.append("image")
-				.attr("id","svg_image");
-	map_svg.selectAll(".tile")
-		.data(tile
-			.scale(projection.scale() * tau * mag) // magを掛ける
-			.translate(
-				projection([0, 0])
-				.map(
-					function(v){return v * mag;}
-				)
-			)
-		) //magを掛ける
-		.enter()
-		.append("g")
-		.attr("class","tile")
-		.attr("fill", "none")
-		.attr("stroke", "rgb(0%,0%,0%)")
-		.attr("stroke-opacity","1")
-		.attr("stroke-width","3")
-		.attr("transform","rotate("+$('#rotate_input').val()+","+width/2+","+height/2+")")
-		.each(function(d) {
-			// このgが各タイル座標となる
-			let g = d3.select(this);
-			d3.json("http://cyberjapandata.gsi.go.jp/xyz/experimental_rdcl/" + d[2] + "/" + d[0] + "/" + d[1] + ".geojson",
-			 function(error, json) {
-				if (error) throw error;
-				g.selectAll(".road")
-					.data(json.features.filter(
-						function(feature){
-							let style;
-							if($(".layerconfig").prop('checked')){
-								style = gsiSelectRoadStyle(feature.properties);
-							}else{
-								style = gsiAutoRoadStyle(feature.properties);
-							}
-							if(style.visibility=="visible"){
-								return true;
-							}else{
-								return false;
-							}
-						}
-					))
-					.enter()
-					.append("path")
-					.attr("d", path);
-			});
-		});
-}
 
 //mapboxレイヤをSVG形式でD3で描写
 function mapboxCreateSvg(){
@@ -209,17 +132,14 @@ function mapboxCreateSvg(){
 	let tau = 2 * pi;
 
 	// 表示するズームレベルとタイルを取得するズームレベルを別個に定義
-	let zoom = {view: map.getView().getZoom(), tile: map.getView().getZoom()};
+	let zoom = map.getView().getZoom();
 
 	let center = ol.proj.transform(map.getView().getCenter(),"EPSG:3857","EPSG:4326");
-
-	// ズームレベルの差をdzとすると、2^dzを変数magで定義
-	let mag = Math.pow(2, zoom.tile - zoom.view);
 
 	// projectionのスケールは表示するズームレベルを指定
 	let projection = d3.geoMercator()
 		.center(center)
-		.scale(256 * Math.pow(2, zoom.view) / tau)
+		.scale(256 * Math.pow(2, zoom) / tau)
 		.translate([width / 2, height / 2]);
 
 	let path = d3.geoPath()
@@ -227,7 +147,7 @@ function mapboxCreateSvg(){
 
 	// d3.tile()のサイズにmagを掛ける
 	let tile = d3.tile()
-		.size([width * mag, height * mag]);
+		.size([width, height]);
 
 	let bbox ="0 0 "+width+" "+height;
 	let map_svg = d3.select(".chartcontainer").append("svg")
@@ -240,26 +160,26 @@ function mapboxCreateSvg(){
 
 	map_svg.append("image")
 				.attr("id","svg_image");
-	map_svg.selectAll(".tile")
-		.data(tile
-			.scale(projection.scale() * tau * mag) // magを掛ける
-			.translate(
-				projection([0, 0])
-				.map(
-					function(v){return v * mag;}
-				)
-			)
-		) //magを掛ける
+	map_svg.append("g")
+			.attr("class","road")
+			.attr("fill", "none")
+			.attr("stroke", "rgb(0%,0%,0%)")
+			.attr("stroke-opacity","1")
+			.attr("stroke-width","3")
+			.attr("transform","rotate("+$('#rotate_input').val()+","+width/2+","+height/2+")")
+		.selectAll(".tile")
+			.data(
+				tile.scale(projection.scale() * tau) // magを掛ける
+					.translate(
+						projection([0, 0])
+							.map(
+								function(v){return v;}
+							)
+					)
+			) //magを掛ける
 		.enter()
-		.append("g")
-		.attr("class","tile")
-		.attr("fill", "none")
-		.attr("stroke", "rgb(0%,0%,0%)")
-		.attr("stroke-opacity","1")
-		.attr("stroke-width","3")
-		.attr("transform","rotate("+$('#rotate_input').val()+","+width/2+","+height/2+")")
 		.each(function(d) {
-			// このgが各タイル座標となる
+		// このgが各タイル座標となる
 			let g = d3.select(this);
 			vt2geojson({
 				uri: 'https://a.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/' +d[2]+'/'+d[0]+'/'+d[1]+'.vector.pbf?access_token=' + mapboxApiKey,
@@ -278,15 +198,32 @@ function mapboxCreateSvg(){
 							if(style.visibility=="visible"){
 								return true;
 							}else{
-								return false;
+								// return false;
+								return true;
 							}
 						}
 					))
 					.enter()
 					.append("path")
 					.attr("d", path);
-			});
 		});
+	});
+}
+
+function appendImage(){
+	let width = $("#map").width();
+	let height = $("#map").height();
+	$("#svg_image").attr("xlink:href",createDataUrl())
+				.attr("x","0")
+				.attr("y","0")
+				.attr("height",height)
+				.attr("width",width);
+}
+
+function svgToText(){
+	appendImage();
+	let text = $("#svg_export").html();
+	return text;
 }
 
 
@@ -322,4 +259,3 @@ function controlDisplay(classname,state){
 }
 
 //2. END
-

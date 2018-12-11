@@ -3,9 +3,10 @@
 <head>
 	<meta charset="UTF-8">
 	<title>tmacs[MB]</title>
-	<!-- 必要なjsファイルをインポート -->
+	<!-- 必要なjs,cssファイルをインポート -->
 	<script type="text/javascript" src="js/import.js"></script>
 	<link rel="stylesheet" href="css/default.css" type="text/css">
+	<link rel="stylesheet" href="css/for_printer.css" media="print" type="text/css">
 </head>
 
 <body>
@@ -36,7 +37,6 @@
 		<!-- 中部 -->
 		<div id="main" class="main">
 			<div class="row">
-				<!-- <div class="col-md-1"></div> -->
 				<div class="col-lg-8">
 					<div  class="row">
 						<div id="map-row" class="col-md-12">
@@ -93,6 +93,7 @@
 													<td class="text-left">
 														<div id="basemap" class="btn-group" data-toggle="buttons">
 															<label class="btn btn-primary "><input type="radio" name="options" autocomplete="off" value="bing"> Bing</label>
+															<label class="btn btn-primary "><input type="radio" name="options" autocomplete="off" value="mapbox"> Mapbox</label>
 															<label class="btn btn-primary active"><input type="radio" name="options" autocomplete="off" value="osm"> OSM</label>
 															<label class="btn btn-primary"><input type="radio" name="options" autocomplete="off" value="gsi"> GSI</label>
 															<label class="btn btn-primary"><input type="radio" name="options" autocomplete="off" value="none"> なし</label>
@@ -116,10 +117,8 @@
 														<label>触地図</label>
 													</td>
 													<td class="text-left">
-														<div id="tactile" class="btn-group" data-toggle="buttons">
-															<label class="btn btn-primary active"><input type="radio" name="options" autocomplete="off" value="mapbox"> Mapbox</label>
-															<label class="btn btn-primary"><input type="radio" name="options" autocomplete="off" value="gsi"> GSI</label>
-															<label class="btn btn-primary"><input type="radio" name="options" autocomplete="off" value="none"> なし</label>
+														<div>
+															<input id="tactile" type="checkbox" checked data-toggle="toggle" data-size="normal">
 														</div>
 													</td>
 												</tr>
@@ -129,9 +128,13 @@
 													</td>
 													<td class="text-left">
 														<div class="">
-															<input id="tactile-water" type="checkbox" checked data-toggle="toggle" data-size="normal" value="water" data-on="水場" data-off="水場">
+															<input id="tactile-river" type="checkbox" checked data-toggle="toggle" data-size="normal" value="river" data-on="河川" data-off="河川">
 															<input id="tactile-railway" type="checkbox" checked data-toggle="toggle" data-size="normal" value="rail" data-on="鉄道" data-off="鉄道">
 															<input id="tactile-road" type="checkbox" checked data-toggle="toggle" data-size="normal" value="road" data-on="道路" data-off="道路">
+															<input id="tactile-all" type="checkbox" checked data-toggle="toggle" data-size="normal" value="all" data-on="全て" data-off="全て">
+															<input id="tactile-building" type="checkbox" checked data-toggle="toggle" data-size="normal" value="building" data-on="建物" data-off="建物">
+															<input id="tactile-coastline" type="checkbox" checked data-toggle="toggle" data-size="normal" value="coastline" data-on="水域" data-off="水域">
+															<input id="tactile-admin" type="checkbox" checked data-toggle="toggle" data-size="normal" value="admin" data-on="国境" data-off="国境">
 														</div>
 													</td>
 												</tr>
@@ -177,21 +180,19 @@
 														<div>
 															<input id="append-check" type="checkbox" data-toggle="toggle" data-size="normal">
 														</div>
-													</td>
-												</tr>
-												<tr id="append-grid" class="gridDisplay">
-													<td>
-														<label>サイズ・枠</label>
-													</td>
-													<td class="text-left">
-														<div id="grid" class="btn-group" data-toggle="buttons">
-															<label class="btn btn-primary"><input type="button" value="2">2×3</input></label>
-															<label class="btn btn-primary"><input type="button" value="3">3×4</input></label>
-															<label class="btn btn-primary"><input type="button" value="4">4×5</input></label>
-															<label class="btn btn-primary"><input type="button" value="5">5×6</input></label>
-															<label class="btn btn-primary"><input type="button" value="frame-on">枠あり</input></label>
-															<label class="btn btn-primary"><input type="button" value="frame-off">枠なし</input></label>
-															<p>目盛りは印刷にのみ反映されます。</p>
+														<br>
+														<div class="gridDisplay">
+															<div id="grid" class="btn-group" data-toggle="buttons">
+																<label class="btn btn-primary"><input type="button" value="frame-on">枠あり</input></label>
+																<label class="btn btn-primary"><input type="button" value="frame-off">枠なし</input></label>
+															</div>
+															<div id="grid" class="btn-group" data-toggle="buttons">
+																<label class="btn btn-primary"><input type="button" value="2">2×3</input></label>
+																<label class="btn btn-primary"><input type="button" value="3">3×4</input></label>
+																<label class="btn btn-primary"><input type="button" value="4">4×5</input></label>
+																<label class="btn btn-primary"><input type="button" value="5">5×6</input></label>
+															</div>
+															<p>印刷にのみ反映されます。</p>
 														</div>
 													</td>
 												</tr>
@@ -229,7 +230,6 @@
 						</div>
 					</div>
 				</div>
-				<!-- <div class="col-md-1"></div> -->
 			</div>
 		</div>
 
@@ -265,22 +265,10 @@
 		<!-- SVG出力用（非表示） -->
 		<div class="noprint">
 			<div id="svg_export" class="chartcontainer"></div>
-			<div id="warning">
-				<div>
-					<p>GSIのままでは小縮尺で動作が遅くなる恐れがあります。mapboxへ変更しますか？</p>
-					<div id="warning-input" class="btn-group" data-toggle="buttons">
-						<label class="btn btn-primary"><input type="radio" name="options" autocomplete="off" value="mapbox"> Mapbox</label>
-						<label class="btn btn-primary"><input type="radio" name="options" autocomplete="off" value="gsi"> GSI</label>
-					</div>
-					<p　style="font-size=10px">＊ボタン以外をクリックするかEscをでこのポップアップを閉じます。</p>
-					<a id="b-close" class="b-close">x<a/>
-				<div>
-			</div>
 		</div>
 	</div>
 
 <!-- （変数の関係で）読み込む順番を変えないこと -->
-	<script type="text/javascript" src="countries.js"></script>
 	<script type="text/javascript" src="js/defineMapLayer.js"></script>
 	<script type="text/javascript" src="js/defineFunction.js"></script>
 	<script type="text/javascript" src="js/defineMapObject.js"></script>
