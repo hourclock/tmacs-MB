@@ -1,46 +1,26 @@
 //3. 関数の定義
-//3.1 場所
-//検索機能（mapbox）
-//現在位置機能
-function setCenter(map,center){
-	map.getView().setCenter(
-		ol.proj.transform(center,"EPSG:4326", "EPSG:3857")
-	);
-	map.getView().setZoom(17);
+
+//座標系を変換する関数
+function transform(center){
+	return ol.proj.transform(center,"EPSG:4326", "EPSG:3857");
 }
 
-function place(){
-	navigator.geolocation.getCurrentPosition(
-		function(position){//現在位置取得が成功したら呼び出される
-			var lng = position.coords.longitude;
-			var lat = position.coords.latitude;
-
-			setCenter(map,[lng,lat]);
-		},
-		function(position){//現在位置取得が失敗したら呼び出される
-			alert("位置情報取得に失敗しました。");
-		});
-}
-
-function getPlaceName(){
-	return document.getElementById('addr').value;
-}
-
+//地名や住所をもとにmapboxからジオコーディング、JSON形式で情報を取得する関数
 function getJson(placename){//同期通信だから大量のデータを取得しちゃいけない。サイトごととまる
 	console.log(placename+"を検索します");
-	let json=$.ajax({
+	let json=$.ajax({//ajaxを用いて取得（よくわからん）
 		type: 'GET',
 		url: "https://api.mapbox.com/geocoding/v5/mapbox.places/"+placename+".json?access_token="+mapboxApiKey,
 		async:false,//非同期処理を中止
 		dataType: 'json',
 	});
-	return json.responseJSON;
+	return json.responseJSON;//取得したJSONを返す
 }
-
+//ジオコーディング結果のJSON形式から検索候補のリストを作成する関数
 function createSuggestions(json,classname){
-	$(classname).empty();
-	for (id in json.features) {
-		$("#dropdown").append(
+	$(classname).empty();//前回の検索結果を初期化
+	for (id in json.features) {//json内のすべての検索候補について
+		$(classname).append(//指定した要素内に検索候補の番号をvalueとしたリストを作成
 			$("<li/>").val(id).append(
 				$("<a/>").attr("class","dropdown-item").append(
 					json.features[id].place_name
@@ -49,23 +29,32 @@ function createSuggestions(json,classname){
 		);
 	}
 }
-
-
-function search(event){
-	let container=getJson(getPlaceName());
-
-	createSuggestions(container,"#dropdown");
-	setCenter(map,container.features[0].center);
-
-	event.stopPropagation();
-	$('.dropdown-toggle').dropdown('toggle');
-
-	return container;
+//検索を実行したときに呼び出される関数
+function setSearchPosition(event,placeOption){//選択した検索候補を格納するために引数にplaceOptionを用意
+	let searchWord=$('#addr').val();//検索する単語を取得
+	placeOption=getJson(searchWord);//単語をもとに検索候補をJSON形式で取得
+	createSuggestions(placeOption,"#dropdown");//取得した検索候補をもとにリストを作成
+	let firstOption = transform(placeOption.features[0].center);//第一検索候補の座標
+	map.getView().setCenter(firstOption);//第一検索候補の座標に移動
+	event.stopPropagation();//たしか動作の一時停止的なコマンドだったと思う。これ入れないと次の行がうまく動かなかった
+	$('.dropdown-toggle').dropdown('toggle');//検索候補のリストを展開
+	return placeOption;
+}
+//現在位置を押したときに呼び出される関数
+function setCurrentPosition(){
+	navigator.geolocation.getCurrentPosition(//現在位置を取得
+		function(position){//現在位置取得が成功したら呼び出される
+			let lng = position.coords.longitude;
+			let lat = position.coords.latitude;
+			map.getView().setCenter(transform([lng,lat]));
+			map.getView().setZoom(17);
+		},
+		function(position){//現在位置取得が失敗したら呼び出される
+			alert("位置情報取得に失敗しました。");
+		});
 }
 
 
-
-//文字列の種類判別
 function checkCharType(input, charType) {
 	switch (charType) {
 		case "zenkaku":// 全角文字（ひらがな・カタカナ・漢字 etc.）
@@ -89,6 +78,7 @@ function checkCharType(input, charType) {
 	}
 }
 
+//全角なら半角に(数字以外受け付けないようにしたい)
 function zenkakuToHankaku(str){
 	if(checkCharType(str,"zenkaku")){
 		let num = str.replace(/[Ａ-Ｚａ-ｚ０-９]/g,
@@ -102,131 +92,6 @@ function zenkakuToHankaku(str){
 	}
 }
 
-//現在表示されている背景画像を取得DataURL化
-function createDataUrl(){
-	for(layer in Status.switch){
-		if(Status.switch[layer]=="ON"){
-			map.removeLayer(Layers.tactile[Status.tactile][layer]);
-		}
-	}
-	map.renderSync();
-	let canvas_base=new Image();
-	canvas_base = map.renderer_.context_.canvas;
-	canvas_base.crossOrigin="anonymous";
-	let base_url=canvas_base.toDataURL();//画像URL化
-	for(layer in Status["switch"]){
-		if(Status["switch"][layer]=="ON"){
-			map.addLayer(Layers.tactile[Status.tactile][layer]);
-		}
-	}
-	return base_url;
-}
-
-
-//mapboxレイヤをSVG形式でD3で描写
-function mapboxCreateSvg(){
-	$("#svg_export").empty();
-	let width = $("#map").width();
-	let height = $("#map").height();
-	let pi = Math.PI;
-	let tau = 2 * pi;
-
-	// 表示するズームレベルとタイルを取得するズームレベルを別個に定義
-	let zoom = map.getView().getZoom();
-
-	let center = ol.proj.transform(map.getView().getCenter(),"EPSG:3857","EPSG:4326");
-
-	// projectionのスケールは表示するズームレベルを指定
-	let projection = d3.geoMercator()
-		.center(center)
-		.scale(256 * Math.pow(2, zoom) / tau)
-		.translate([width / 2, height / 2]);
-
-	let path = d3.geoPath()
-		.projection(projection);
-
-	// d3.tile()のサイズにmagを掛ける
-	let tile = d3.tile()
-		.size([width, height]);
-
-	let bbox ="0 0 "+width+" "+height;
-	let map_svg = d3.select(".chartcontainer").append("svg")
-			.attr("class", "map")
-			.attr("width", width)
-			.attr("height", height)
-			.attr("xmlns","http://www.w3.org/2000/svg")
-			.attr("xmlns:xlink","http://www.w3.org/1999/xlink")
-			.attr("viewBox",bbox);
-
-	map_svg.append("image")
-				.attr("id","svg_image");
-	map_svg.append("g")
-			.attr("class","road")
-			.attr("fill", "none")
-			.attr("stroke", "rgb(0%,0%,0%)")
-			.attr("stroke-opacity","1")
-			.attr("stroke-width","3")
-			.attr("transform","rotate("+$('#rotate_input').val()+","+width/2+","+height/2+")")
-		.selectAll(".tile")
-			.data(
-				tile.scale(projection.scale() * tau) // magを掛ける
-					.translate(
-						projection([0, 0])
-							.map(
-								function(v){return v;}
-							)
-					)
-			) //magを掛ける
-		.enter()
-		.each(function(d) {
-		// このgが各タイル座標となる
-			let g = d3.select(this);
-			vt2geojson({
-				uri: 'https://a.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/' +d[2]+'/'+d[0]+'/'+d[1]+'.vector.pbf?access_token=' + mapboxApiKey,
-				layer: 'road'
-			}, function (error, json) {
-				if (error) throw error;
-				g.selectAll(".road")
-					.data(json.features.filter(
-						function(feature){
-							let style;
-							if($(".layerconfig").prop('checked')){
-								style = mapboxSelectRoadStyle(feature.properties);
-							}else{
-								style = mapboxAutoRoadStyle(feature.properties);
-							}
-							if(style.visibility=="visible"){
-								return true;
-							}else{
-								// return false;
-								return true;
-							}
-						}
-					))
-					.enter()
-					.append("path")
-					.attr("d", path);
-		});
-	});
-}
-
-function appendImage(){
-	let width = $("#map").width();
-	let height = $("#map").height();
-	$("#svg_image").attr("xlink:href",createDataUrl())
-				.attr("x","0")
-				.attr("y","0")
-				.attr("height",height)
-				.attr("width",width);
-}
-
-function svgToText(){
-	appendImage();
-	let text = $("#svg_export").html();
-	return text;
-}
-
-
 //レイヤの制御関数
 function layersSet(){
 	for(backID in Layers.back){//全ての背景画像を削除
@@ -238,25 +103,227 @@ function layersSet(){
 		}
 	}
 	if(Status.back!="none"){//背景画像なしを除いて
-		map.addLayer(Layers.back[Status.back]);//Statusにて指定された背景画像表示
+		map.addLayer(Layers.back[Status.back]);//Statusにて指定された背景画像を追加
 	}
 	if(Status.tactile!="none"){//触地図レイヤなしを除いて
 		for(switchID in Status.switch){
-			if(Status.switch[switchID]=="ON"){//StatusがONの状態のレイヤを表示
+			if(Status.switch[switchID]===true){//StatusがONの状態のレイヤを追加
 				map.addLayer(Layers.tactile[Status.tactile][switchID]);
 			}
 		}
 	}
 }
 
+function mapboxAutoRoadStyle(feature){
+	let color = [0, 0, 0, 0];
+	let width = 0;
+	let visibility="invisible";
+	if(map.getView().getZoom()>=16){
+		//a.indexOf(b)はbが配列aの何番目に現れるかを返す。現れなかったら-1を返す。これを利用して要素が存在するかを確認できる。
+		if(["street","track","link","street_limited","service","path"].indexOf(feature.class)>=0){
+			color="black";
+			width=5;
+			visibility="visible";
+		}
+	}
+	if(map.getView().getZoom()>=13){
+		if(["secondary","trunk","primary","tertiary"].indexOf(feature.class)>=0){
+			color="black";
+			width=5;
+			visibility="visible";
+		}
+	}
+	if(map.getView().getZoom()>=5){
+		if(["motorway"].indexOf(feature.class)>=0){
+			color="black";
+			width=5;
+			visibility="visible";
+		}
+	}
+	return {
+		color:color,
+		width:width,
+		visibility:visibility
+	};
+}
 
-//クラスの表示・非表示を制御する関数
-function controlDisplay(classname,state){
-	let contents = document.getElementsByClassName(classname);
-	for(let i = 0; i < contents.length; i++) {
-		contents[i].style.display = state;
+function mapboxSelectRoadStyle(feature){
+	let color = [0, 0, 0, 0];
+	let width = 0;
+	let visibility="invisible";
+	let select=$("#layer").val();//設定パネルの表示内容（道路）のセレクトボックスの値。選択したものが配列で取得できる
+	for(value in select){
+		if(feature.class===select[value]){
+			color="black";
+			width=5;
+			visibility="visible";
+		}
+	}
+	return {
+		color:color,
+		width:width,
+		visibility:visibility
+	};
+}
+
+function landmarkMarkerSet(coordinate){
+	let markerObject = new ol.Feature({
+		geometry: new ol.geom.Point(coordinate, 'XY'),
+	});
+	markerObject.setStyle(markerStyle);
+	markerObject.setProperties({"object":"marker"});
+	marker.push(markerObject);
+	let markerSource = new ol.source.Vector({
+		features: marker
+	});
+	markerLayer.setSource(markerSource);
+	markerLayer.getSource().changed();
+}
+
+function brailleMarkerSet(coordinate){
+	let brailleObject = new ol.Feature({
+		geometry: new ol.geom.Point(coordinate, 'XY'),
+	});
+	let brailleString=$("#tactile-text").val();
+	let stringStyle = new ol.style.Style();
+	let brailleSumiji=$("#tactile-sumiji").val();
+	let sumijiStyle = new ol.style.Style();
+	let text = new ol.style.Text({
+			fill: new ol.style.Fill({color: "black"}),
+			stroke: new ol.style.Stroke({color: "black", width: 1}),
+			scale: 1.6,
+			textAlign: "center",
+			textBaseline: "top",
+			offsetY: 0,
+			text: brailleString,
+			font: "18px ikarashi",
+		});
+	let sumiji = new ol.style.Text({
+			fill: new ol.style.Fill({color: "#0066ff"}),
+			stroke: new ol.style.Stroke({color: "white", width: 1}),
+			scale: 1.6,
+			textAlign: "center",
+			textBaseline: "top",
+			offsetY: 25,
+			text: brailleSumiji,
+			font:"16px sans-serif",
+		});
+	stringStyle.setText(text);
+	sumijiStyle.setText(sumiji);
+	brailleObject.setStyle([stringStyle,sumijiStyle]);
+	brailleObject.setProperties({"object":"braille"});
+	braille.push(brailleObject);
+	let brailleSource = new ol.source.Vector({
+		features: braille
+	});
+	brailleLayer.setSource(brailleSource);
+	brailleLayer.getSource().changed();
+}
+function directionMarkerSet(coordinate){
+	let directionMarkerCoordinates = [//北の矢印を一筆書き（XY座標で次に線を結ぶ点を指定する）
+		coordinate[0]   ,coordinate[1]   ,//（0,0）
+		coordinate[0]   ,coordinate[1]-75,//（0,-75）
+		coordinate[0]   ,coordinate[1]+75,//（0,75)
+		coordinate[0]-75,coordinate[1]   ,//(-75,0)
+		coordinate[0]   ,coordinate[1]+75,//(0,75)
+		coordinate[0]+75,coordinate[1]   ,//(75,0)これを順に結ぶと矢印となる（75はズームレベル16で見やすいサイズとして決めた）
+	];
+	let directionMarkerGeometry= new ol.geom.LineString(directionMarkerCoordinates,"XY");
+	let scale=Math.pow(2,(16-map.getView().getZoom()));//ズームレベル16を基準にしたため16から引く（ズームレベル1減ると地図は2倍）
+	directionMarkerGeometry.scale(scale);//矢印の大きさをズームレベルに応じて大きくする
+	let directionMarkerObject = new ol.Feature({
+		geometry: directionMarkerGeometry
+	});
+	directionMarkerObject.setStyle(directionStyle);
+	directionMarkerObject.setProperties({"object":"direction"});
+	if(direction!=null){
+		direction=[];
+	}
+	direction.push(directionMarkerObject);
+	let directionSource = new ol.source.Vector({
+		features: direction
+	});
+	directionLayer.setSource(directionSource);
+	directionLayer.getSource().changed();
+}
+
+function deleteMarker(features){
+	if(!!features){
+		let feature=features[0];
+		console.log(feature);
+		if(["Positions","Point","MultiPoint","LineString","MultiLineString","Polygon","MyltiPolygon"].indexOf(feature.type_)>=0){
+			let fid = feature.id_;
+			selection[fid] = feature;
+			for(id in Layers.tactile.mapbox){
+				Layers.tactile.mapbox[id].setStyle(Layers.tactile.mapbox[id].getStyle());
+			}
+			return;
+		}
+
+		if(feature.values_.object==="marker"){
+			let markerId = feature.ol_uid;
+			let deleteMarkerId;
+			for(key in marker){
+				if(marker[key].ol_uid===markerId){
+					deleteMarkerId=key;
+				}
+			}
+			marker.splice(deleteMarkerId,1);
+			let markerSource = new ol.source.Vector({
+				features: marker
+			});
+			markerLayer.setSource(markerSource);
+			markerLayer.getSource().changed();
+			return;
+		}
+
+		if(feature.values_.object==="direction"){
+			let directionId = feature.ol_uid;
+			let deleteDirectionId;
+			for(key in direction){
+				if(direction[key].ol_uid===directionId){
+					deleteDirectionId=key;
+				}
+			}
+			direction.splice(deleteDirectionId,1);
+			let directionSource = new ol.source.Vector({
+				features: direction
+			});
+			directionLayer.setSource(directionSource);
+			directionLayer.getSource().changed();
+			return;
+		}
+
+		if(feature.values_.object==="braille"){
+			let brailleId = feature.ol_uid;
+			let deleteBrailleId;
+			for(key in braille){
+				if(braille[key].ol_uid===brailleId){
+					deleteBrailleId=key;
+				}
+			}
+			braille.splice(deleteBrailleId,1);
+			let brailleSource = new ol.source.Vector({
+				features: braille
+			});
+			brailleLayer.setSource(brailleSource);
+			brailleLayer.getSource().changed();
+			return;
+		}
+
+		if(feature.geometryName_==="drawLine"){
+			lineSource.removeFeature(feature);
+			lineSource.changed();
+			return;
+		}
 	}
 }
 
-//2. END
-
+function redoSelectedFeature(){
+	let keys_array = Object.keys(selection);
+	let len =  keys_array.length;
+	delete selection[keys_array[len-1]];//連想配列の末尾を削除
+	for(id in Layers.tactile.mapbox){
+		Layers.tactile.mapbox[id].setStyle(Layers.tactile.mapbox[id].getStyle());
+	}
+}

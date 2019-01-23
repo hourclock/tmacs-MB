@@ -1,20 +1,21 @@
 //3. 設定パネル
 $(function(){//検索が押されたら候補用のドロップダウンを表示
-	let resultContainer;
+	let placeOption;//検索候補を格納
 	$("#addr").focus();
 	$('#search button[type=button]').on("click", function(event){//検索ボタンを押したとき
-		resultContainer=search(event);
+		placeOption=setSearchPosition(event);
 	});
 	$('#search input[type=text]').complete(function(event){//検索パネルで文字入力しエンターを押したとき
-		resultContainer=search(event);
+		placeOption=setSearchPosition(event);
 	});
 
 	$(document).on("click", "#dropdown li" ,function() {//検索候補をクリックしたとき
-		setCenter(map , resultContainer.features[$(this).val()].center);
+		let selectedOptionCoordinate = transform(placeOption.features[$(this).val()].center);
+		map.getView().setCenter(selectedOptionCoordinate);
 	});
 
 	$('#place input[type=button]').on("click", function() {//現在位置ボタンを押したとき
-		place();
+		setCurrentPosition();
 	});
 });
 
@@ -53,16 +54,15 @@ $(function() {
 $(function() {
 	$('#tactile').change(function() {
 		Status.tactile=( $(this).prop('checked') )?"mapbox":"none";
-		if(Status.tactile=="none"){
-			controlDisplay("tactileLayer","none");
+		if(Status.tactile==="none"){
+			$(".tactileLayer").hide();
 		}else{
-			controlDisplay("tactileLayer","");
+			$(".tactileLayer").show();
 		}
 
-		if(Status.tactile=="mapbox"){
-			mapboxCreateSvg();
-			mapboxRoadLayer.getSource().changed();
-		}
+		// if(Status.tactile=="mapbox"){
+		// 	mapboxRoadLayer.getSource().changed();
+		// }
 		layersSet();
 		console.log("CHANGE BASE LAYER:"+this.value);
 	});
@@ -71,54 +71,28 @@ $(function() {
 //3.5 レイヤ
 //触地図レイヤーのon/off(未完成)
 $(function() {
-	$('#tactile-river').change(function() {
-		Status["switch"]["river"]=( $(this).prop('checked') )?"ON":"OFF";
+	$("#tactileLayer input").change(function(){
+		Status.switch[this.value]=( $(this).prop('checked') )?true:false;
+		if(this.value==="road"){
+			if($(this).prop('checked')){
+				$(".roadContents").show();
+			}else{
+				$(".roadContents").hide();
+			}
+		}
 		layersSet();
-	});
-
-	$('#tactile-railway').change(function() {
-		Status["switch"]["rail"]=( $(this).prop('checked') )?"ON":"OFF";
-		layersSet();
-	});
-
-	$('#tactile-road').change(function() {
-		Status["switch"]["road"]=( $(this).prop('checked') )?"ON":"OFF";
-		layersSet();
-	});
-
-	$('#tactile-all').change(function() {
-		Status["switch"]["all"]=( $(this).prop('checked') )?"ON":"OFF";
-		layersSet();
-	});
-
-	$('#tactile-building').change(function() {
-		Status["switch"]["building"]=( $(this).prop('checked') )?"ON":"OFF";
-		layersSet();
-	});
-
-	$('#tactile-coastline').change(function() {
-		Status["switch"]["coastline"]=( $(this).prop('checked') )?"ON":"OFF";
-		layersSet();
-	});
-
-	$('#tactile-admin').change(function() {
-		Status["switch"]["admin"]=( $(this).prop('checked') )?"ON":"OFF";
-		layersSet();
-	});
+	})
 });
 //3.5 END
-
+//道路表示内容選択機能
 $(function() {
 	$('#layer').change(function(){
-		if(Status.tactile=="mapbox"){
+		if(Status.tactile==="mapbox"){
 			mapboxRoadLayer.getSource().changed();
-			mapboxCreateSvg();
 		}
 	});
 });
-
-
-
+//マルチセレクト機能の有効化・無効化
 $(function() {
 	$('.layerconfig').change(function(){
 		if($(".layerconfig").prop('checked')){
@@ -136,6 +110,7 @@ $("input[name='rotate']").TouchSpin({
 	min: -180,
 	max: 180,
 	step: 1,
+	postfix:"度"
 });
 $(function() {
 	$('#rotate_input').change(function() {
@@ -145,11 +120,9 @@ $(function() {
 	});
 });
 //3.6 END
-//3.7 縮尺
-// 縮尺の切り替え
+//3.7 ズームレベル
+// ズームレベルの切り替え
 $("input[name='scale']").TouchSpin({
-	min: 10,
-	max: 19,
 	step: 0.1,
 	decimals:1,
 });
@@ -161,15 +134,31 @@ $(function() {
 	});
 });
 //3.7 END
+// 縮尺の切り替え
+$("input[name='mapscale']").TouchSpin({
+	max:500000000,
+	step: 10,
+	decimals:1,
+	prefix: '1/'
+});
+$(function() {
+	$('#mapScale_input').on("change",function() {
+		let zoom = zenkakuToHankaku(this.value);
+		$('#mapScale_input').val(zoom);
+		let scale = Math.LOG2E * Math.log((96*39.37*156543.04*Math.cos(ol.proj.transform(map.getView().getCenter(),"EPSG:3857", "EPSG:4326")[1]*Math.PI/180))/zoom);
+		map.getView().setZoom(scale);
+		// $('#scale_input').val(scale);
+	});
+});
 //3.8 目盛り
 //目盛りの表示・非表示
 $(function() {
 	$('#append-check').change(function() {
 		if( !$(this).prop('checked')){
-			controlDisplay("gridDisplay","none");
+			$(".gridDisplay").hide();
 			console.log("Append OFF");
 		}else{
-			controlDisplay("gridDisplay","");
+			$(".gridDisplay").show();
 			console.log("Append ON");
 		}
 	});
@@ -184,9 +173,9 @@ $(function() {
 			document.getElementById('right').style.borderLeft=state;
 			document.getElementById('bottom').style.borderTop=state;
 		}
-		if(this.value=="frame-on"){
+		if(this.value==="frame-on"){
 			setFrame("1mm solid #000000");
-		}else if(this.value=="frame-off"){
+		}else if(this.value==="frame-off"){
 			setFrame("");
 		}else{
 			$('#top,#bottom').css("background-size","calc(100%/"+String(Number(this.value)+1)+") 100%");
@@ -195,11 +184,79 @@ $(function() {
 	});
 });
 //3.8 END
+
+
+$(function() {
+	$('#edit').change(function() {//編集のON・OFF
+		if($(this).prop('checked')){
+			if(editMode==="line"){//もし直前の編集モードがラインだったら継続してラインになるように
+				map.addInteraction(draw);
+			}else if(editMode==="braille"){
+				$("#tactile-text").show();
+				$("#tactile-sumiji").show();
+			}
+			$("#edit-contents").show();
+		}else{//それ以外ではラインモードを取り消しておく
+			$("#edit-contents").hide();
+			map.removeInteraction(draw);
+			$("#tactile-text").hide();
+			$("#tactile-sumiji").hide();
+		}
+	});
+
+	$('#edit-contents input[type=radio]').change(function() {//編集のボタンを押したとき動作
+		editMode=this.value;
+		if(editMode==="line"){
+			map.addInteraction(draw);
+		}else {
+			map.removeInteraction(draw);
+		}
+		if(editMode==="braille"){
+			$("#tactile-text").show();
+			$("#tactile-sumiji").show();
+		}else{
+			$("#tactile-text").hide();
+			$("#tactile-sumiji").hide();
+		}
+	});
+});
+
+//編集機能（あとで関数か整理すること）
+map.on('dblclick', function(event) {//ダブルクリック（削除機能における戻る機能）
+	if($("#edit").prop("checked")){
+		if(editMode==="delete"){
+			redoSelectedFeature();
+		}
+	}
+});
+
+map.on("singleclick",function(event){
+	if($("#edit").prop("checked")){//編集機能中のクリック
+		let features = map.getFeaturesAtPixel(event.pixel);
+		let coordinate=event.coordinate;
+		if(editMode==="marker"){
+			landmarkMarkerSet(coordinate);
+		}else if(editMode==="braille"){
+			brailleMarkerSet(coordinate);
+		}else if(editMode==="direction"){
+			directionMarkerSet(coordinate);
+		}else if(editMode==="delete"){
+			deleteMarker(features);
+		}
+	}else{
+		let information = map.getFeaturesAtPixel(event.pixel);
+		if(information!=null){
+			console.log(information[0]);
+		}
+	}
+});
+
+
 //3.9 保存
 $(function(){
 	$('#output input[type=button]').change(function(){
 		//プリント
-		if( this.value == "print" ){
+		if( this.value === "print" ){
 			console.log("SAVE:PRINT");
 			let width = $("#grid-container").width();
 			let height = $("#grid-container").height();
@@ -209,129 +266,20 @@ $(function(){
 			$("#grid-container").width(width*a4Height/height);
 			window.print();
 		//PNG出力
-		}else if( this.value == "png" ){
-			console.log("SAVE:PNG");
-			map.once('rendercomplete',//レンダリング終了時、1度だけ呼び出し
-				function(event) {
-					let canvas = event.context.canvas;//canvasを取得
-					//ブラウザごとに保存動作
-					if (navigator.msSaveBlob) {
-						navigator.msSaveBlob(canvas.msToBlob(), 'map.png');
-					} else {
-						canvas.toBlob(
-							function(blob) {
-								saveAs(blob, 'map.png');
-							}
-						);
-					}
-				}
-			);
+		}else if( this.value === "png" ){
 			map.render();
-		//SVG出力
-		}else if( this.value == "svg" ){
-			console.log("SAVE:SVG");
-			let text = svgToText();
-			let blob = new Blob([text],{type:"text/plain"});
-			if(window.navigator.msSaveBlob){
-				window.navigator.msSaveBlob(blob,"tmacs.svg");
-			}else{
-				saveAs(blob,"tmacs.svg");
-			}
-		}/*else if( this.value=="mouri"){
-			console.log("SAVE:SessionStorage");
-			let text = svgToText();
-			if( ('sessionStorage' in window) && (window.sessionStorage !== null) ) {
-				sessionStorage["tmacs"]=text;
-				window.location.href ='https://stevenyuta.github.io/tactilemapyuta';
+			let canvas = map.renderer_.context_.canvas;//canvasを取得
+			//ブラウザごとに保存動作
+			if (navigator.msSaveBlob) {
+				navigator.msSaveBlob(canvas.msToBlob(), 'map.png');
 			} else {
-				alart("利用できません");
+				canvas.toBlob(
+					function(blob) {
+						saveAs(blob, 'map.png');
+					}
+				);
 			}
-
-		}*/
+		}
 	});
 });
 //3.9 END
-
-let editMode;
-$(function() {
-	$('#edit').change(function() {
-		if($("#edit").prop('checked')){
-			controlDisplay("edit","");
-		}else{
-			controlDisplay("edit","none");
-		}
-	});
-
-	$('#edit-contents input[type=radio]').change( function() {
-		editMode=this.value;
-	});
-});
-
-//編集機能（あとで関数か整理すること）
-  map.on('dblclick', function(event) {
-  	if($("#edit").prop("checked")){
-  		if(editMode=="marker"){
-			var features = map.getFeaturesAtPixel(event.pixel);
-			if(features[0].ol_uid!=null){
-				let markerId = features[0].ol_uid;
-				let deleteMarkerId;
-				for(key in marker){
-					if(marker[key].ol_uid==markerId){
-						deleteMarkerId=key;
-					}
-				}
-				marker.splice(deleteMarkerId,1);
-				var vectorSource = new ol.source.Vector({
-					features: marker
-				});
-				vectorLayer.setSource(vectorSource);
-				vectorLayer.getSource().changed();
-			}
-		}
-	}
-  });
-
-map.on("singleclick",function(event){
-	if($("#edit").prop("checked")){
-		console.log(editMode);
-		if(editMode=="marker"){
-			var coordinate=event.coordinate;
-			var poi = new ol.Feature({
-				geometry: new ol.geom.Point(coordinate, 'XY'),
-			});
-			poi.setStyle(iconStyle);
-			marker.push(poi);
-			var vectorSource = new ol.source.Vector({
-				features: marker
-			});
-			vectorLayer.setSource(vectorSource);
-			vectorLayer.getSource().changed();
-		}
-		if(editMode=="delete"){
-			var features = map.getFeaturesAtPixel(event.pixel);
-			console.log(features);
-			if (!features) {
-				selection = {};
-				mapboxRiverLayer.setStyle(mapboxRiverLayer.getStyle());
-				mapboxRailLayer.setStyle(mapboxRailLayer.getStyle());
-				mapboxRoadLayer.setStyle(mapboxRoadLayer.getStyle());
-				mapboxAllLayer.setStyle(mapboxAllLayer.getStyle());
-				mapboxBuildingLayer.setStyle(mapboxBuildingLayer.getStyle());
-				mapboxCoastlineLayer.setStyle(mapboxCoastlineLayer.getStyle());
-				mapboxAdminLayer.setStyle(mapboxAdminLayer.getStyle());
-			  return;
-			}
-			var feature = features[0];
-			var fid = feature.id_;
-			selection[fid] = feature;
-			mapboxRiverLayer.setStyle(mapboxRiverLayer.getStyle());
-			mapboxRailLayer.setStyle(mapboxRailLayer.getStyle());
-			mapboxRoadLayer.setStyle(mapboxRoadLayer.getStyle());
-			mapboxAllLayer.setStyle(mapboxAllLayer.getStyle());
-			mapboxBuildingLayer.setStyle(mapboxBuildingLayer.getStyle());
-			mapboxCoastlineLayer.setStyle(mapboxCoastlineLayer.getStyle());
-			mapboxAdminLayer.setStyle(mapboxAdminLayer.getStyle());
-		}
-	}
-});
-
