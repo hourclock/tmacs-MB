@@ -1,3 +1,14 @@
+//もし誰かが引き継ぐならmapboxのアカウント自分で取ってAPIキー自分の物に差し替えて
+const bingApiKey='AszwABNoPgkdx0WBY9mWxqQrA0KVt31moIe2OxNubCdN7ApfhKfDhXQ50mc34Nn4';
+const mapboxApiKey= 'pk.eyJ1Ijoic2FuZGNsb2NrIiwiYSI6ImNqbnZkdHdtdDBsemMzcW14cWhoaXJhZWkifQ.QgCrVouZ9aTkeTU3De9UrQ';
+
+let selection = {};//削除する地図情報を格納する
+let marker=[];//マーカー情報を保持
+let braille=[];//点字情報を保持
+let direction=[];//北の矢印マーカーを保持
+
+let editMode="none";
+
 let osmBackLayer = new ol.layer.Tile({
 	source: new ol.source.OSM(),
 	opacity:0.5,
@@ -6,8 +17,26 @@ let osmBackLayer = new ol.layer.Tile({
 
 let bingBackLayer = new ol.layer.Tile({
 	source: new ol.source.BingMaps({
-		key: 'AszwABNoPgkdx0WBY9mWxqQrA0KVt31moIe2OxNubCdN7ApfhKfDhXQ50mc34Nn4',
+		key: bingApiKey,
 		imagerySet: "Road",
+		crossOrigin:"anonymous",
+	}),
+	opacity:0.5,
+	}
+);
+
+let mapboxBackLayer = new ol.layer.Tile({
+	source: new ol.source.XYZ({
+		url: 'https://api.mapbox.com/styles/v1/mapbox/streets-v10/tiles/256/{z}/{x}/{y}?access_token='+mapboxApiKey,
+		crossOrigin:"anonymous",
+	}),
+	opacity:0.5,
+	}
+);
+
+let satelliteBackLayer = new ol.layer.Tile({
+	source: new ol.source.XYZ({
+		url: 'https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v9/tiles/256/{z}/{x}/{y}?access_token='+mapboxApiKey,
 		crossOrigin:"anonymous",
 	}),
 	opacity:0.5,
@@ -24,194 +53,8 @@ let gsiBackLayer = new ol.layer.Tile({
 	}
 );
 
-const gsiRoadContents=["国道","都道府県道","高速自動車国道等","市区町村道等","3m未満","3m-5.5m未満","5.5m-13m未満","13m-19.5m未満"];
 
-function gsiAutoRoadStyle(feature){
-	let color="#00000000";
-	let width=0;
-	let visibility="invisible";
-	if(["国道","都道府県道"].indexOf(feature.rdCtg)>=0){
-		color="black";
-		width=8;
-		visibility="visible";
-		return {color:color,width:width,visibility:visibility};
-	}else if(["国道","都道府県道","高速自動車国道等"].indexOf(feature.rdCtg)>=0){
-		if(map.getView().getZoom()>=14){
-			color="black";
-			width=5;
-			visibility="visible";
-			return {color:color,width:width,visibility:visibility};
-		}
-	}else if(["5.5m-13m未満","13m-19.5m未満"].indexOf(feature.rnkWidth)>=0){
-		if(map.getView().getZoom()>=14){
-			color="black";
-			width=5;
-			visibility="visible";
-			return {color:color,width:width,visibility:visibility};
-		}
-	}else{
-		if(map.getView().getZoom()>=16){
-			color="black";
-			width=5;
-			visibility="visible";
-			return {color:color,width:width,visibility:visibility};
-		}
-	}
-	return {color:color,width:width,visibility:visibility};
-}
 
-function gsiSelectRoadStyle(feature){
-	let color="#00000000";
-	let width=0;
-	let visibility="invisible";
-
-	let select=$("#layer").val();
-	for(value in select){
-		if(["3m未満","3m-5.5m未満","5.5m-13m未満","13m-19.5m未満"].indexOf(select[value])>=0){
-			if(feature.rnkWidth == select[value]){
-				color="black";
-				width=5;
-				visibility="visible";
-				return {color:color,width:width,visibility:visibility};
-			}
-		}else{
-			if(feature.rdCtg == select[value]){
-				color="black";
-				width=5;
-				visibility="visible";
-				return {color:color,width:width,visibility:visibility};
-			}
-		}
-	}
-	return {color:color,width:width,visibility:visibility};
-}
-
-let gsiRoadLayer = new ol.layer.VectorTile({
-	source: new ol.source.VectorTile({
-		attributions:  "<a href='http://maps.gsi.go.jp/development/ichiran.html' target='_blank'>地理院タイル</a>",
-		format: new ol.format.GeoJSON(),
-		projection: 'EPSG:4326',
-		tileGrid: new ol.tilegrid.createXYZ({minZoom: 16, maxZoom: 16}),
-		url: 'http://cyberjapandata.gsi.go.jp/xyz/experimental_rdcl/{z}/{x}/{y}.geojson',
-	}),
-	renderMode:"image",
-	style:function(feature,resolution){
-		// console.log(feature);
-		let style;
-		if($(".layerconfig").prop('checked')){
-			style = gsiSelectRoadStyle(feature.values_);
-		}else{
-			style = gsiAutoRoadStyle(feature.values_);
-		}
-		return[new ol.style.Style({
-			stroke: new ol.style.Stroke({
-				color: style.color,
-				width: style.width,
-				lineCap: "square",
-			})
-		})];
-	}
-});
-
-let gsiRailLayer = new ol.layer.VectorTile({
-	source: new ol.source.VectorTile({
-		attributions:  "<a href='http://maps.gsi.go.jp/development/ichiran.html' target='_blank'>地理院タイル</a>",
-		format: new ol.format.GeoJSON(),
-		projection: 'EPSG:3857',
-		tileGrid: new ol.tilegrid.createXYZ({minZoom: 16, maxZoom: 16}),
-		url: 'http://cyberjapandata.gsi.go.jp/xyz/experimental_railcl/{z}/{x}/{y}.geojson'
-	}),
-	style: new ol.style.Style({
-		stroke: new ol.style.Stroke({
-			color: 'black',
-			width: 10,
-			lineCap: "butt",
-			lineDash:[10,5],
-		})
-	})
-});
-
-let gsiWaterLayer = new ol.layer.VectorTile({
-	source: new ol.source.VectorTile({
-		attributions:  "<a href='http://maps.gsi.go.jp/development/ichiran.html' target='_blank'>地理院タイル</a>",
-		format: new ol.format.GeoJSON(),
-		projection: 'EPSG:3857',
-		tileGrid: new ol.tilegrid.createXYZ({}),
-		url: 'http://cyberjapandata.gsi.go.jp/xyz/experimental_rvrcl/{z}/{x}/{y}.geojson'
-	}),
-	style:function(feature){
-		if(map.getView().getZoom()>15&&feature.get('type') == "河川中心線（通常部）"){
-			return new ol.style.Style({
-				stroke: new ol.style.Stroke({
-					color: 'black',
-					width: 10,
-					lineCap:"round",
-					lineDash:[0.5,15],
-				})
-			});
-		}else{
-			return new ol.style.Style({
-				stroke: new ol.style.Stroke({
-					color: '#00000000',
-					width: 0,
-					lineCap: "butt",
-				})
-			});
-		}
-	}
-});
-
-//もし誰かが引き継ぐならmapboxのアカウント自分で取ってAPIキー自分の物に差し替えて
-const mapboxApiKey= 'pk.eyJ1Ijoic2FuZGNsb2NrIiwiYSI6ImNqbnZkdHdtdDBsemMzcW14cWhoaXJhZWkifQ.QgCrVouZ9aTkeTU3De9UrQ';
-
-const mapboxRoadContents=["street","track","link","street_limited","service","secondary","trunk","primary","tertiary","motorway"];
-
-function mapboxAutoRoadStyle(feature){
-	let color = "#00000000";
-	let width = 0;
-	let visibility="invisible";
-	if(map.getView().getZoom()>=16){
-		if(["street","track","link","street_limited","service"].indexOf(feature.class)>=0){
-			color="black";
-			width=5;
-			visibility="visible";
-			return {color:color,width:width,visibility:visibility};
-		}
-	}
-	if(map.getView().getZoom()>=13){
-		if(["secondary","trunk","primary","tertiary"].indexOf(feature.class)>=0){
-			color="black";
-			width=5;
-			visibility="visible";
-			return {color:color,width:width,visibility:visibility};
-		}
-	}
-	if(map.getView().getZoom()>=10){
-		if(["motorway"].indexOf(feature.class)>=0){
-			color="black";
-			width=5;
-			visibility="visible";
-			return {color:color,width:width,visibility:visibility};
-		}
-	}
-	return {color:color,width:width,visibility:visibility};
-}
-
-function mapboxSelectRoadStyle(feature){
-	let color = "#00000000";
-	let width = 0;
-	let visibility="invisible";
-	let select=$("#layer").val();
-	for(value in select){
-		if(feature.class==select[value]){
-			color="black";
-			width=5;
-			visibility="visible";
-			return {color:color,width:width,visibility:visibility};
-		}
-	}
-	return {color:color,width:width,visibility:visibility};
-}
 
 let mapboxRoadLayer = new ol.layer.VectorTile({
 	source: new ol.source.VectorTile({
@@ -225,6 +68,7 @@ let mapboxRoadLayer = new ol.layer.VectorTile({
 	renderMode:"image",
 	style:function(feature,resolution){
 		let style;
+		let selected = !!selection[feature.id_];//表示する道路を単体で消す機能追加したかったけど無理っぽい
 		if($(".layerconfig").prop('checked')){
 			style= mapboxSelectRoadStyle(feature.properties_);
 		}else{
@@ -232,10 +76,10 @@ let mapboxRoadLayer = new ol.layer.VectorTile({
 		}
 		return[new ol.style.Style({
 			stroke: new ol.style.Stroke({
-				color: style.color,
+				color: selected?[0, 0, 0, 0]:style.color,
 				width: style.width,
 				lineCap: "square",
-			})
+			}),
 		})];
 	}
 });
@@ -251,15 +95,16 @@ let mapboxRailLayer = new ol.layer.VectorTile({
 	}),
 	renderMode:"image",
 	style:function(feature,resolution){
-		let color="#00000000";
+		let color=[0, 0, 0, 0];
 		let width=0;
-		if(["major_rail","minor_rail"].indexOf(feature.get("class"))>=0){
+		if(["major_rail","minor_rail"].indexOf(feature.get("class"))>=0&&map.getView().getZoom()>=16){
 			color="black";
 			width=5;
 		}
+		let selected = !!selection[feature.id_];
 		return[new ol.style.Style({
 			stroke: new ol.style.Stroke({
-				color: color,
+				color: selected?[0, 0, 0, 0]:color,
 				width: width,
 				lineCap: "square",
 				lineDash:[10,20],
@@ -268,7 +113,117 @@ let mapboxRailLayer = new ol.layer.VectorTile({
 	}
 });
 
-let mapboxWaterLayer = new ol.layer.VectorTile({
+let mapboxRiverLayer = new ol.layer.VectorTile({
+	source: new ol.source.VectorTile({
+		attributions: '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> ' +
+		'© <a href="https://www.openstreetmap.org/copyright">' +
+		'OpenStreetMap contributors</a>',
+		tileGrid: new ol.tilegrid.createXYZ({/*minZoom: 11, maxZoom: 22*/}),
+		format: new ol.format.MVT({layers:"waterway"}),
+		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/{z}/{x}/{y}.vector.pbf?access_token=' + mapboxApiKey,
+	}),
+	renderMode:"image",
+	style:function(feature,resolution){
+		let color=[0, 0, 0, 0];
+		let width=0;
+		if(map.getView().getZoom()>=16&&feature.properties_.layer==="waterway"){
+			color="black";
+			width=5;
+		}
+		let selected = !!selection[feature.id_];
+		return[new ol.style.Style({
+			stroke: new ol.style.Stroke({
+				color: selected?[0, 0, 0, 0]:color,
+				width: width,
+				lineCap: "round",
+				lineDash:[10,20,0,20],
+			})
+		})];
+	}
+});
+
+let mapboxRiverPolygonLayer = new ol.layer.VectorTile({
+	source: new ol.source.VectorTile({
+		attributions: '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> ' +
+		'© <a href="https://www.openstreetmap.org/copyright">' +
+		'OpenStreetMap contributors</a>',
+		tileGrid: new ol.tilegrid.createXYZ({/*minZoom: 11, maxZoom: 22*/}),
+		format: new ol.format.MVT({layers:"waterway"}),
+		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/{z}/{x}/{y}.vector.pbf?access_token=' + mapboxApiKey,
+	}),
+	renderMode:"image",
+	style:function(feature,resolution){
+		let color=[0, 0, 0, 0];
+		let width=0;
+		if(map.getView().getZoom()>=16&&feature.properties_.layer==="water"){
+			color="black";
+			width=5;
+		}
+		let selected = !!selection[feature.id_];
+		return[new ol.style.Style({
+			stroke: new ol.style.Stroke({
+				color: selected?[0, 0, 0, 0]:color,
+				width: width,
+				lineCap: "round",
+				lineDash:[10,20,0,20],
+			}),
+			// fill: new ol.style.Fill({
+			// 	color:"blue",
+			// })
+		})];
+	}
+});
+
+let mapboxAllLayer = new ol.layer.VectorTile({
+	source: new ol.source.VectorTile({
+		attributions: '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> ' +
+		'© <a href="https://www.openstreetmap.org/copyright">' +
+		'OpenStreetMap contributors</a>',
+		format: new ol.format.MVT({/*layers:"admin"*/}),
+		tileGrid: new ol.tilegrid.createXYZ({/*minZoom: 11, maxZoom: 22*/}),
+		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/{z}/{x}/{y}.vector.pbf?access_token=' + mapboxApiKey,
+	}),
+	renderMode:"image",
+	style:function(feature,resolution){
+		let color="black";
+		let width=5;
+		let selected = !!selection[feature.id_];
+		return[new ol.style.Style({
+			stroke: new ol.style.Stroke({
+				color: selected?[0, 0, 0, 0]:color,
+				width: width,
+				lineCap: "square",
+			})
+		})];
+	}
+});
+
+let mapboxBuildingLayer = new ol.layer.VectorTile({
+	source: new ol.source.VectorTile({
+		attributions: '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> ' +
+		'© <a href="https://www.openstreetmap.org/copyright">' +
+		'OpenStreetMap contributors</a>',
+		format: new ol.format.MVT({layers:"building"}),
+		tileGrid: new ol.tilegrid.createXYZ({/*minZoom: 11, maxZoom: 22*/}),
+		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/{z}/{x}/{y}.vector.pbf?access_token=' + mapboxApiKey,
+	}),
+	renderMode:"image",
+	style:function(feature,resolution){
+		let color="black";
+		let width=5;
+		let selected = !!selection[feature.id_];
+		return[new ol.style.Style({
+			stroke: new ol.style.Stroke({
+				color: selected?[0, 0, 0, 0]:color,
+				width: width,
+				lineCap: "square",
+				// lineDash:[10,20],
+			})
+		})];
+	}
+});
+
+let mapboxCoastlineLayer = new ol.layer.VectorTile({
 	source: new ol.source.VectorTile({
 		attributions: '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> ' +
 		'© <a href="https://www.openstreetmap.org/copyright">' +
@@ -279,18 +234,103 @@ let mapboxWaterLayer = new ol.layer.VectorTile({
 	}),
 	renderMode:"image",
 	style:function(feature,resolution){
-		let color="#00000000";
+		let color=[0, 0, 0, 0];
 		let width=0;
-		if(map.getView().getZoom()>=16){
-			color="black";
-			width=5;
-		}
+		color="black";
+		width=5;
+		var selected = !!selection[feature.id_];
 		return[new ol.style.Style({
 			stroke: new ol.style.Stroke({
-				color: color,
+				color: selected?[0, 0, 0, 0]:color,
 				width: width,
 				lineCap: "square",
 			})
 		})];
 	}
+});
+
+let mapboxAdminLayer = new ol.layer.VectorTile({
+	source: new ol.source.VectorTile({
+		attributions: '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> ' +
+		'© <a href="https://www.openstreetmap.org/copyright">' +
+		'OpenStreetMap contributors</a>',
+		tileGrid: new ol.tilegrid.createXYZ({/*minZoom: 11, maxZoom: 22*/}),
+		format: new ol.format.MVT({layers:"admin"}),
+		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/{z}/{x}/{y}.vector.pbf?access_token=' + mapboxApiKey,
+	}),
+	renderMode:"image",
+	style:function(feature,resolution){
+		let color=[0, 0, 0, 0];
+		let width=0;
+		// if(map.getView().getZoom()>=16&&feature.properties_.layer==="waterway"){
+			color="black";
+			width=5;
+		// }
+		var selected = !!selection[feature.id_];
+		return[new ol.style.Style({
+			stroke: new ol.style.Stroke({
+				color: selected?[0, 0, 0, 0]:color,
+				width: width,
+				lineCap: "square",
+			})
+		})];
+	}
+});
+
+//編集:線
+let lineSource = new ol.source.Vector();
+let lineLayer = new ol.layer.Vector({
+	source: lineSource,
+	style: new ol.style.Style({
+		stroke: new ol.style.Stroke({
+			color: 'black',
+			width: 5
+		}),
+	})
+});
+let draw = new ol.interaction.Draw({
+	source: lineSource,
+	type: "LineString",
+	geometryName:"drawLine",
+});
+
+//編集:マーカー
+let markerStyle = [
+	new ol.style.Style({
+			image: new ol.style.Circle({
+				fill: new ol.style.Fill({
+					color: "white",
+				}),
+				stroke: new ol.style.Stroke({
+					color: "black",
+					width: 6,
+				}),
+				radius:20,
+			})
+	}),
+	new ol.style.Style({
+			image: new ol.style.Circle({
+				fill: new ol.style.Fill({
+					color: "black",
+				}),
+				stroke: new ol.style.Stroke({
+					color: "black",
+					width: 1,
+				}),
+				radius:10,
+			}),
+	}),
+];
+let markerLayer = new ol.layer.Vector();
+
+//編集:点字
+let brailleLayer = new ol.layer.Vector();
+
+//編集:方向
+let directionLayer = new ol.layer.Vector();
+let directionStyle = new ol.style.Style({
+	stroke: new ol.style.Stroke({
+		color: 'black',
+		width: 5
+	}),
 });
