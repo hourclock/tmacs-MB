@@ -151,7 +151,7 @@ img.src = 'data:image/svg+xml;charset=utf-8,'+
 
 img.onload = function(){
   let pattern = ctx.createPattern(img, 'repeat');
-  mapboxRiverPolygonLayer.setStyle(new ol.style.Style({
+  mapboxRiverLayer.setStyle(new ol.style.Style({
     fill: new ol.style.Fill({
       color: pattern
     })
