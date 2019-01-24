@@ -113,36 +113,8 @@ let mapboxRailLayer = new ol.layer.VectorTile({
 	}
 });
 
-let mapboxRiverLayer = new ol.layer.VectorTile({
-	source: new ol.source.VectorTile({
-		attributions: '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> ' +
-		'© <a href="https://www.openstreetmap.org/copyright">' +
-		'OpenStreetMap contributors</a>',
-		tileGrid: new ol.tilegrid.createXYZ({/*minZoom: 11, maxZoom: 22*/}),
-		format: new ol.format.MVT({layers:"waterway"}),
-		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/{z}/{x}/{y}.vector.pbf?access_token=' + mapboxApiKey,
-	}),
-	renderMode:"image",
-	style:function(feature,resolution){
-		let color=[0, 0, 0, 0];
-		let width=0;
-		if(map.getView().getZoom()>=16&&feature.properties_.layer==="waterway"){
-			color="black";
-			width=5;
-		}
-		let selected = !!selection[feature.id_];
-		return[new ol.style.Style({
-			stroke: new ol.style.Stroke({
-				color: selected?[0, 0, 0, 0]:color,
-				width: width,
-				lineCap: "round",
-				lineDash:[10,20,0,20],
-			})
-		})];
-	}
-});
 
-let mapboxRiverPolygonLayer = new ol.layer.VectorTile({
+let mapboxRiverLayer = new ol.layer.VectorTile({
 	source: new ol.source.VectorTile({
 		attributions: '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> ' +
 		'© <a href="https://www.openstreetmap.org/copyright">' +
@@ -174,29 +146,6 @@ let mapboxRiverPolygonLayer = new ol.layer.VectorTile({
 	}
 });
 
-let mapboxAllLayer = new ol.layer.VectorTile({
-	source: new ol.source.VectorTile({
-		attributions: '© <a href="https://www.mapbox.com/map-feedback/">Mapbox</a> ' +
-		'© <a href="https://www.openstreetmap.org/copyright">' +
-		'OpenStreetMap contributors</a>',
-		format: new ol.format.MVT({/*layers:"admin"*/}),
-		tileGrid: new ol.tilegrid.createXYZ({/*minZoom: 11, maxZoom: 22*/}),
-		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/{z}/{x}/{y}.vector.pbf?access_token=' + mapboxApiKey,
-	}),
-	renderMode:"image",
-	style:function(feature,resolution){
-		let color="black";
-		let width=5;
-		let selected = !!selection[feature.id_];
-		return[new ol.style.Style({
-			stroke: new ol.style.Stroke({
-				color: selected?[0, 0, 0, 0]:color,
-				width: width,
-				lineCap: "square",
-			})
-		})];
-	}
-});
 
 let mapboxBuildingLayer = new ol.layer.VectorTile({
 	source: new ol.source.VectorTile({

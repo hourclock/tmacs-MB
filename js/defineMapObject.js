@@ -80,10 +80,9 @@ let Layers={
 	tactile:{//触地図レイヤーはここに
 		mapbox:{
 			braille   : brailleLayer,
-			river     : mapboxRiverPolygonLayer,
+			river     : mapboxRiverLayer,
 			rail      : mapboxRailLayer,
 			road      : mapboxRoadLayer,
-			all       : mapboxAllLayer,
 			building  : mapboxBuildingLayer,
 			coastline : mapboxCoastlineLayer,
 			admin     : mapboxAdminLayer,
@@ -116,7 +115,6 @@ let Status = {
 		river     : true ,
 		rail      : true ,
 		road      : true ,
-		all       : false,
 		building  : false,
 		coastline : false,
 		admin     : false,
