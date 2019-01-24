@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 	<meta charset="UTF-8">
-	<title>tmacs[MB]</title>
+	<title>tmacs[mb]</title>
 	<!-- 必要なjs,cssファイルをインポート -->
 	<script type="text/javascript" src="js/import.js"></script>
 	<link rel="stylesheet" href="css/default.css" type="text/css">
@@ -22,12 +22,12 @@
 				<br>
 				<div class="panel panel-primary">
 					<div class="panel-heading">
-						<h4>tmacsとは</h4>
+						<h4>tmacs[mb]とは</h4>
 					</div>
 					<div class="panel-body">
 						<p align="left">
-						「tmacs」は触地図を作成するために開発されました．指定した地点を中心にした触地図を出力します．<br>
-						触察する際に解説する晴眼者の方にも配慮して，背景に墨字の地図を出力することもできます．立体コピー用紙に印刷して現像すれば触地図が完成します．
+						「tmacs[mb]」は触地図を作成するために開発されました．指定した地点を中心にした触地図を出力します．<br>
+						立体コピー用紙に印刷して現像すれば触地図が完成します．
 						</p>
 					</div>
 				</div>
@@ -41,14 +41,14 @@
 					<div  class="row">
 						<div id="map-row" class="col-md-12">
 								<div id="grid-container">
-									<div id="topleft" class="gridDisplay"></div>
-									<div id="top" class="gridDisplay"></div>
-									<div id="topright" class="gridDisplay"></div>
-									<div id="left" class="gridDisplay"></div>
-									<div id="map" class="map"></div>
-									<div id="right" class="gridDisplay"></div>
-									<div id="bottomleft" class="gridDisplay"></div>
-									<div id="bottom" class="gridDisplay"></div>
+									<div id="topleft"     class="gridDisplay"></div>
+									<div id="top"         class="gridDisplay"></div>
+									<div id="topright"    class="gridDisplay"></div>
+									<div id="left"        class="gridDisplay"></div>
+									<div id="map"         class="map"></div>
+									<div id="right"       class="gridDisplay"></div>
+									<div id="bottomleft"  class="gridDisplay"></div>
+									<div id="bottom"      class="gridDisplay"></div>
 									<div id="bottomright" class="gridDisplay"></div>
 								</div>
 						</div>
@@ -65,15 +65,15 @@
 									<div class="panel-body">
 										<table class="table">
 											<tbody>
-												<tr>
+												<tr id="Place">
 													<td>
-														<label>場所</label>
+														<label>場所検索</label>
 													</td>
 													<td class="text-left">
 														<div id="search" class="input-group">
-															<input type="text" class="form-control" id="addr" placeholder="住所・施設名など">
+															<input id="addr" type="text" class="form-control" placeholder="住所・施設名など">
 															<span class="input-group-btn">
-																<button class="btn btn-primary" type="button">検索</button>
+																<button id="searchButton" class="btn btn-primary" type="button">検索</button>
 																<label id="place" class="btn btn-default"><input type="button">現在地</label>
 															</span>
 														</div>
@@ -86,21 +86,21 @@
 														</div>
 													</td>
 												</tr>
-												<tr>
+												<tr id="Back">
 													<td>
 														<label>背景地図</label>
 													</td>
 													<td class="text-left">
 														<div id="basemap" class="btn-group" data-toggle="buttons">
-															<label class="btn btn-primary "><input type="radio" name="options" autocomplete="off" value="bing"> Bing</label>
-															<label class="btn btn-primary "><input type="radio" name="options" autocomplete="off" value="mapbox"> Mapbox</label>
-															<label class="btn btn-primary active"><input type="radio" name="options" autocomplete="off" value="osm"> OSM</label>
+															<label class="btn btn-primary"><input type="radio" name="options" autocomplete="off" value="bing"> Bing</label>
+															<label class="btn btn-primary active"><input type="radio" name="options" autocomplete="off" value="mapbox"> Mapbox</label>
 															<label class="btn btn-primary"><input type="radio" name="options" autocomplete="off" value="gsi"> GSI</label>
+															<label class="btn btn-primary"><input type="radio" name="options" autocomplete="off" value="satellite"> 衛星写真</label>
 															<label class="btn btn-primary"><input type="radio" name="options" autocomplete="off" value="none"> なし</label>
 														</div>
 													</td>
 												</tr>
-												<tr>
+												<tr id="Opacity">
 													<td>
 														<label>背景地図の透過率</label>
 													</td>
@@ -112,7 +112,7 @@
 														</div>
 													</td>
 												</tr>
-												<tr>
+												<tr id="TLayer">
 													<td>
 														<label>触地図</label>
 													</td>
@@ -120,35 +120,44 @@
 														<div>
 															<input id="tactile" type="checkbox" checked data-toggle="toggle" data-size="normal">
 														</div>
-													</td>
-												</tr>
-												<tr class="tactileLayer">
-													<td>
-														<label>触地図レイヤー</label>
-													</td>
-													<td class="text-left">
-														<div class="">
-															<input id="tactile-river" type="checkbox" checked data-toggle="toggle" data-size="normal" value="river" data-on="河川" data-off="河川">
-															<input id="tactile-railway" type="checkbox" checked data-toggle="toggle" data-size="normal" value="rail" data-on="鉄道" data-off="鉄道">
-															<input id="tactile-road" type="checkbox" checked data-toggle="toggle" data-size="normal" value="road" data-on="道路" data-off="道路">
-															<input id="tactile-all" type="checkbox" checked data-toggle="toggle" data-size="normal" value="all" data-on="全て" data-off="全て">
-															<input id="tactile-building" type="checkbox" checked data-toggle="toggle" data-size="normal" value="building" data-on="建物" data-off="建物">
-															<input id="tactile-coastline" type="checkbox" checked data-toggle="toggle" data-size="normal" value="coastline" data-on="水域" data-off="水域">
-															<input id="tactile-admin" type="checkbox" checked data-toggle="toggle" data-size="normal" value="admin" data-on="国境" data-off="国境">
+														<br>
+														<div id="tactileLayer" class="tactileLayer">
+															<input type="checkbox" checked data-toggle="toggle" value="river"     data-on="河川" data-off="河川">
+															<input type="checkbox" checked data-toggle="toggle" value="rail"      data-on="鉄道" data-off="鉄道">
+															<input type="checkbox" checked data-toggle="toggle" value="road"      data-on="道路" data-off="道路">
+															<br><br>
+															<!-- <input type="checkbox"         data-toggle="toggle" value="all"       data-on="全て"  data-off="全て"> --><!--デバック用mapboxの全地物を表示する-->
+															<input type="checkbox"         data-toggle="toggle" value="building"  data-on="建物" data-off="建物">
+															<input type="checkbox"         data-toggle="toggle" value="coastline" data-on="水域" data-off="水域">
+															<input type="checkbox"         data-toggle="toggle" value="admin"     data-on="区域" data-off="区域">
 														</div>
 													</td>
 												</tr>
-												<tr class="tactileLayer">
+												<tr id="TRoad" class="tactileLayer roadContents">
 													<td>
 														<label class="lang" language="ja">表示内容(道路)</label>
 													</td>
 													<td class="text-left">
 														<input class="layerconfig" type="checkbox" data-toggle="toggle" data-size="normal" data-on="手動" data-off="自動">
 														<select id="layer" class="layer" multiple="multiple">
+															<option value="street">未分類道路</option>
+															<option value="motorway">自動車専用道路</option>
+															<option value="trunk">国道</option>
+															<option value="primary">主要地方道</option>
+															<option value="secondary">一般都道府県道</option>
+															<option value="tertiary">市町村道</option>
+															<option value="service">敷地内道路</option>
+															<option value="path">小道</option>
+															<option value="track">農道・林道</option>
+															<option value="link">接続道路</option>
+															<option value="pedestrian">歩行者天国</option>
+															<!-- <option value="street_limited">street_limited</option> -->
+															<!-- <option value="level_crossing">level_crossing</option> -->
+															<!-- <option value="traffic_signals">traffic_signals</option> -->
 														</select>
 													</td>
 												</tr>
-												<tr>
+												<tr id="Rotate">
 													<td>
 														<label>角度</label>
 													</td>
@@ -160,9 +169,9 @@
 														</div>
 													</td>
 												</tr>
-												<tr>
+												<tr id="Scale">
 													<td>
-														<label>縮尺</label>
+														<label>ズームレベル</label>
 													</td>
 													<td class="text-left">
 														<div class="input-group bootstrap-touchspin">
@@ -172,9 +181,21 @@
 														</div>
 													</td>
 												</tr>
+												<tr>
+													<td>
+														<label>縮尺</label>
+													</td>
+													<td class="text-left">
+														<div class="input-group bootstrap-touchspin">
+															<span class="input-group-addon bootstrap-touchspin-prefix" style="display: none;"></span>
+															<input id="mapScale_input" type="text" value="" name="mapscale" class="form-control" style="display: block;">
+															<span class="input-group-addon bootstrap-touchspin-postfix" style="display: none;"></span>
+														</div>
+													</td>
+												</tr>
 												<tr id=append-table>
 													<td>
-														<label>目盛り</label>
+														<label>枠・目盛り</label>
 													</td>
 													<td class="text-left">
 														<div>
@@ -194,6 +215,26 @@
 															</div>
 															<p>印刷にのみ反映されます。</p>
 														</div>
+													</td>
+												</tr>
+												<tr id="Id">
+													<td>
+														<label>編集</label>
+													</td>
+													<td class="text-left">
+														<div>
+															<input id="edit" type="checkbox" data-toggle="toggle" data-size="normal">
+														</div>
+														<br>
+														<div id="edit-contents" class="btn-group" data-toggle="buttons">
+															<label class="btn btn-primary "><input type="radio" name="options" autocomplete="off" value="line"> 線描画</label>
+															<label class="btn btn-primary "><input type="radio" name="options" autocomplete="off" value="marker"> マーカー</label>
+															<label class="btn btn-primary "><input type="radio" name="options" autocomplete="off" value="braille"> 点字</label>
+															<label class="btn btn-primary "><input type="radio" name="options" autocomplete="off" value="direction"> 方位</label>
+															<label class="btn btn-primary "><input type="radio" name="options" autocomplete="off" value="delete"> 削除</label>
+														</div>
+														<input type="text" class="form-control" id="tactile-text" placeholder="点字（ひらがな）">
+														<input type="text" class="form-control" id="tactile-sumiji" placeholder="墨字">
 													</td>
 												</tr>
 											</tbody>
@@ -217,8 +258,6 @@
 														<div id="output" class="btn-group" data-toggle="buttons">
 															<label class="btn btn-primary"><input type="button" value="print" >印刷</input></label>
 															<label class="btn btn-primary"><input type="button" value="png">PNG</input></label>
-															<label class="btn btn-primary"><input type="button" value="svg">SVG</input></label>
-															<label class="btn btn-primary"><input type="button" value="mouri">編集</input></label>
 														</div>
 													</td>
 												</tr>
@@ -242,30 +281,42 @@
 					</div>
 					<div class="panel-body">
 						<p align="left">
-							背景地図は３種類から選択できます．「なし」を選ぶと背景地図を削除することがきます．
+							背景地図は5種類から選択できます．「なし」を選ぶと背景地図を削除することがきます．
 						</p>
 						<dl class="dl-horizontal" align="left">
 							<dt>Bing</dt>
 							<dd>Bingが提供している一般的な地図</dd>
-							<dt>OSM</dt><dd>OpenStreetMapが提供している地図（デフォルト）</dd>
+							<dt>mapbox</dt><dd>mapboxが提供している地図（デフォルト）</dd>
 							<dt>GSI</dt><dd>国土地理院が提供している地図</dd>
+							<dt>衛星写真</dt>
+							<dd>Bingが提供している衛星写真</dd>
 						</dl>
 						<p align="left">
 							背景地図の透過率は0から100までの100段階で変更できます．デフォルトは「50」です．触地図として立体コピーで現像した時に浮き上がる線の邪魔にならない程度の透過率を設定してください．<br>
 							角度は-180から180までの360段階で変更できます．デフォルトは「0」です．<br>
-							縮尺は10から19まで変更できます．デフォルトは「16」です．「10」が小縮尺（より広い範囲が含まれる），「19」が大縮尺（より狭い範囲が含まれる）です．
+							枠・目盛りによって地図外周に目印となる枠と目盛りを表示することができます．<br>
 						</p>
+						<p align="left">
+							編集では5つの機能を利用できます．
+						</p>
+						<dl class="dl-horizontal" align="left">
+							<dt>線描画</dt>
+							<dd>クリックした地点から再度クリックした地点まで直線で結ぶ．ダブルクリックで確定．</dd>
+							<dt>マーカー</dt>
+							<dd>クリックした地点にマーカーを設置．</dd>
+							<dt>点字</dt>
+							<dd>クリックした地点にテキストボックスに入力した点字と墨字を設置．</dd>
+							<dt>方位</dt>
+							<dd>クリックした地点に方位記号を設置．</dd>
+							<dt>削除</dt>
+							<dd>クリックにより要素を削除．編集機能で追加したもの以外はダブルクリックで再表示．</dd>
+						</dl>
 					</div>
 				</div>
 			</div>
 			<!-- フッター -->
 			<footer class="noprint"><p>© 2018 Watanabe Laboratory, Niigata Univ.</p></footer>
 		</div><!-- noprint -->
-
-		<!-- SVG出力用（非表示） -->
-		<div class="noprint">
-			<div id="svg_export" class="chartcontainer"></div>
-		</div>
 	</div>
 
 <!-- （変数の関係で）読み込む順番を変えないこと -->

@@ -1,3 +1,8 @@
+@font-face {
+  font-family: ikarashi;
+  src: url(tactile.ttf) format('truetype');
+}
+
 body {
 	padding: 0; margin: 0;
 	-webkit-print-color-adjust: exact;

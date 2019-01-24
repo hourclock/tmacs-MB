@@ -25,6 +25,7 @@ $(window).resize(function(){
 	$("#grid-container").width($("#map-row").width());
 });
 
+
 //マップを<div id="map">に生成
 let map = new ol.Map({
 	target: 'map',
@@ -33,84 +34,128 @@ let map = new ol.Map({
 		zoom: false,
 		attributionOptions: {
 			collapsible: false
-		}
+		},
 	}),
 });
-map.getView().setMinZoom(5);
-map.getView().setMaxZoom(22);
-//URLにズームレベルや座標を表示したいならol.hash(map)のコメントアウトを外す
-//（なぜか縮尺の上限下限を無視できるようになるため停止中）
-// ol.hash(map);
+// map.getView().setMinZoom(5);
+// map.getView().setMaxZoom(22);
+
+//コピペだがこれで地図がダブルクリックでズームしなくなる。編集の削除でダブルクリックを戻る動作にしたかったためこれを用いた
+let dblClickInteraction;
+map.getInteractions().getArray().forEach(function(interaction) {
+  if (interaction instanceof ol.interaction.DoubleClickZoom) {
+    dblClickInteraction = interaction;
+  }
+});
+map.removeInteraction(dblClickInteraction);
+
 
 //mapの変更後に呼び出される
 map.on("moveend",
 	function(){
-		$("#scale_input").val(Math.round(map.getView().getZoom()*10)/10);//縮尺を更新
+		$("#scale_input").val(Math.round(map.getView().getZoom()*10)/10);//ズームレベルを更新
 		$("#rotate_input").val(Math.round(map.getView().getRotation()*180/Math.PI));//角度を更新
-		mapboxCreateSvg();
-		// }
+		let mapscale =Math.round( 96*39.37*156543.04*Math.cos(ol.proj.transform(map.getView().getCenter(),"EPSG:3857", "EPSG:4326")[1]*Math.PI/180)/(Math.pow(2,map.getView().getZoom())));
+		$("#mapScale_input").val(mapscale);//縮尺を更新
 	}
 );
 
-
-//mapbox一筋にしたからそもそもhtmlに記述したほうが早い気がする（要変更）
-for(content in mapboxRoadContents){
-	$("#layer").append(
-		$("<option/>").val(mapboxRoadContents[content]).append(
-			mapboxRoadContents[content]
-		)
-	);
-}
 
 $('#layer').multiselect({
 	nonSelectedText:"なし",
 	includeSelectAllOption:true,
 	selectAllText:"すべて選択",
 });
-$("#layer").multiselect("rebuild");
 $("#layer").multiselect("disable");
 
 //使用するレイヤを連想配列に格納
 let Layers={
-	back:{
-		osm:osmBackLayer,
-		mapbox:mapboxBackLayer,
-		bing:bingBackLayer,
-		gsi:gsiBackLayer
+	back:{//背景画像はここに
+		osm       : osmBackLayer,
+		mapbox    : mapboxBackLayer,
+		bing      : bingBackLayer,
+		gsi       : gsiBackLayer,
+		satellite : satelliteBackLayer,
 	},
-	tactile:{
+	tactile:{//触地図レイヤーはここに
 		mapbox:{
-			river:mapboxRiverLayer,
-			rail:mapboxRailLayer,
-			road:mapboxRoadLayer,
-			all:mapboxAllLayer,
-			building:mapboxBuildingLayer,
-			coastline:mapboxCoastlineLayer,
-			admin:mapboxAdminLayer
-		}
+			braille   : brailleLayer,
+			river     : mapboxRiverLayer,
+			rail      : mapboxRailLayer,
+			road      : mapboxRoadLayer,
+			building  : mapboxBuildingLayer,
+			coastline : mapboxCoastlineLayer,
+			admin     : mapboxAdminLayer,
+			line      : lineLayer,
+			marker    : markerLayer,
+			direction : directionLayer,
+		},
+		// xxx:{//mapboxしか現在ないが、別サービスを使う際は（仮にxxxというサービスを使うとすると以下のコメントアウト部分みたいに追加して）、下のStatusのtactileを"xxx"にすると使うことができる
+		// 	braille   : brailleLayer,
+		// 	river     : xxxRiverLayer,
+		// 	rail      : xxxRailLayer,
+		// 	road      : xxxRoadLayer,
+		// 	all       : xxxAllLayer,
+		// 	building  : xxxBuildingLayer,
+		// 	coastline : xxxCoastlineLayer,
+		// 	admin     : xxxAdminLayer,
+		// 	line      : lineLayer,
+		// 	marker    : markerLayer,
+		// 	direction : directionLayer,
+		// },
 	}
 };
 
 //レイヤの状態を配列に格納(管理はここで一括で行う)
 let Status = {
-	back:"osm",
+	back:"mapbox",
 	tactile:"mapbox",
 	switch:{
-		river:"ON",
-		rail:"ON",
-		road:"ON",
-		all:"ON",
-		building:"ON",
-		coastline:"ON",
-		admin:"ON"
+		braille   : true ,
+		river     : true ,
+		rail      : true ,
+		road      : true ,
+		building  : false,
+		coastline : false,
+		admin     : false,
+		line      : true ,
+		marker    : true ,
+		direction : true ,
 	}
 };
 
 layersSet();
 
-// 設定パネルの「サイズ・枠」を非表示にしておく
-controlDisplay("gridDisplay","none");
+$(".gridDisplay").hide();
+$("#edit-contents").hide();
+$("#tactile-text").hide();
+$("#tactile-sumiji").hide();
 
-//初回読み込み時に地図が画面の上部ピッタリに表示されるように。説明文とか名前とかより地図自体が大事だし。
-$(window)
-	.scrollTop($("#main").offset().top);
+//初回読み込み時に地図が画面の上部ピッタリに表示されるように。説明文とかロゴより地図自体が大事
+$(window).scrollTop($("#main").offset().top);
+
+
+let cnv = document.createElement('canvas');
+let ctx = cnv.getContext('2d');
+let img = new Image();
+img.src = 'data:image/svg+xml;charset=utf-8,'+
+			'<svg width="20px" height="20px" viewBox="0 0 20 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">'+
+				'<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">'+
+					'<g fill="#000000">'+
+						'<circle id="Oval-377-Copy-9" cx="3" cy="3" r="3"></circle>'+
+						'<circle id="Oval-377-Copy-14" cx="13" cy="13" r="3"></circle>'+
+					'</g>'+
+				'</g>'+
+			'</svg>';
+
+
+img.onload = function(){
+  let pattern = ctx.createPattern(img, 'repeat');
+  mapboxRiverLayer.setStyle(new ol.style.Style({
+    fill: new ol.style.Fill({
+      color: pattern
+    })
+  }));
+};
+
+
