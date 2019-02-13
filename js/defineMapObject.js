@@ -51,10 +51,10 @@ map.removeInteraction(dblClickInteraction);
 //mapの変更後に呼び出される
 map.on("moveend",
 	function(){
-		$("#scale_input").val(Math.round(map.getView().getZoom()*10)/10);//ズームレベルを更新
-		$("#rotate_input").val(Math.round(map.getView().getRotation()*180/Math.PI));//角度を更新
+		$("input[name='scale']").val(Math.round(map.getView().getZoom()*10)/10);//ズームレベルを更新
+		$("input[name='rotate']").val(Math.round(map.getView().getRotation()*180/Math.PI));//角度を更新
 		let mapscale =Math.round( 96*39.37*156543.04*Math.cos(ol.proj.transform(map.getView().getCenter(),"EPSG:3857", "EPSG:4326")[1]*Math.PI/180)/(Math.pow(2,map.getView().getZoom())));
-		$("#mapScale_input").val(mapscale);//縮尺を更新
+		$("input[name='mapscale']").val(mapscale);//縮尺を更新
 	}
 );
 
