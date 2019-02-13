@@ -1,5 +1,5 @@
 //mapの表示
-//初期位置。お好みで
+//初期位置 お好みで
 let defaultCenter = [
 	138.9374791, 37.8646316		//新潟大学
 	//140.622944, 42.841269		//ニセコ
@@ -15,9 +15,9 @@ let viewConfig = new ol.View({
 });
 
 //地図の高さ。微妙に上下の解説の枠が入るのが気になる。
-$("#grid-container").height($("#map-row").width()/Math.sqrt(2));
+$("#grid-container").height($("#map-row").width()/Math.sqrt(2)*0.95);
 $(window).resize(function(){
-	$("#grid-container").height($("#map-row").width()/Math.sqrt(2));
+	$("#grid-container").height($("#map-row").width()/Math.sqrt(2)*0.95);
 });
 
 $("#grid-container").width($("#map-row").width());
@@ -37,8 +37,6 @@ let map = new ol.Map({
 		},
 	}),
 });
-// map.getView().setMinZoom(5);
-// map.getView().setMaxZoom(22);
 
 //コピペだがこれで地図がダブルクリックでズームしなくなる。編集の削除でダブルクリックを戻る動作にしたかったためこれを用いた
 let dblClickInteraction;
@@ -65,6 +63,8 @@ $('#layer').multiselect({
 	nonSelectedText:"なし",
 	includeSelectAllOption:true,
 	selectAllText:"すべて選択",
+	allSelectedText:"すべて",
+	nSelectedText: " 種類選択済み",
 });
 $("#layer").multiselect("disable");
 
@@ -90,7 +90,7 @@ let Layers={
 			marker    : markerLayer,
 			direction : directionLayer,
 		},
-		// xxx:{//mapboxしか現在ないが、別サービスを使う際は（仮にxxxというサービスを使うとすると以下のコメントアウト部分みたいに追加して）、下のStatusのtactileを"xxx"にすると使うことができる
+		// xxx:{//mapboxしか現在ないが、別サービスを使う際のためのテンプレ
 		// 	braille   : brailleLayer,
 		// 	river     : xxxRiverLayer,
 		// 	rail      : xxxRailLayer,
@@ -121,15 +121,12 @@ let Status = {
 		line      : true ,
 		marker    : true ,
 		direction : true ,
-	}
+	},
+	editMode:"none",
+	markerMode:"singleCircle",
 };
 
 layersSet();
-
-$(".gridDisplay").hide();
-$("#edit-contents").hide();
-$("#tactile-text").hide();
-$("#tactile-sumiji").hide();
 
 //初回読み込み時に地図が画面の上部ピッタリに表示されるように。説明文とかロゴより地図自体が大事
 $(window).scrollTop($("#main").offset().top);
@@ -150,10 +147,9 @@ img.src = 'data:image/svg+xml;charset=utf-8,'+
 
 
 img.onload = function(){
-  let pattern = ctx.createPattern(img, 'repeat');
   mapboxRiverLayer.setStyle(new ol.style.Style({
     fill: new ol.style.Fill({
-      color: pattern
+      color: ctx.createPattern(img, 'repeat')
     })
   }));
 };

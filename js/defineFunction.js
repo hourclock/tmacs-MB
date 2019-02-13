@@ -1,26 +1,21 @@
 //3. 関数の定義
 
-//座標系を変換する関数
-function transform(center){
-	return ol.proj.transform(center,"EPSG:4326", "EPSG:3857");
-}
-
-//地名や住所をもとにmapboxからジオコーディング、JSON形式で情報を取得する関数
-function getJson(placename){//同期通信だから大量のデータを取得しちゃいけない。サイトごととまる
-	console.log(placename+"を検索します");
+//地名や住所をもとにmapboxからジオコーディングし、JSON形式で情報を取得する関数
+function getJson(placeName){//同期処理だから大量のデータを取得しちゃいけない。サイトごととまる
 	let json=$.ajax({//ajaxを用いて取得（よくわからん）
 		type: 'GET',
-		url: "https://api.mapbox.com/geocoding/v5/mapbox.places/"+placename+".json?access_token="+mapboxApiKey,
+		url: "https://api.mapbox.com/geocoding/v5/mapbox.places/"+placeName+".json?access_token="+mapboxApiKey,
 		async:false,//非同期処理を中止
 		dataType: 'json',
 	});
 	return json.responseJSON;//取得したJSONを返す
 }
+
 //ジオコーディング結果のJSON形式から検索候補のリストを作成する関数
-function createSuggestions(json,classname){
-	$(classname).empty();//前回の検索結果を初期化
+function createSuggestions(json,className){
+	$(className).empty();//前回の検索結果を初期化
 	for (id in json.features) {//json内のすべての検索候補について
-		$(classname).append(//指定した要素内に検索候補の番号をvalueとしたリストを作成
+		$(className).append(//指定した要素内に検索候補の番号をvalueとしたリストを作成
 			$("<li/>").val(id).append(
 				$("<a/>").attr("class","dropdown-item").append(
 					json.features[id].place_name
@@ -31,13 +26,16 @@ function createSuggestions(json,classname){
 }
 //検索を実行したときに呼び出される関数
 function setSearchPosition(event,placeOption){//選択した検索候補を格納するために引数にplaceOptionを用意
-	let searchWord=$('#addr').val();//検索する単語を取得
+	let searchWord=$('#search input').val();//検索する単語を取得
 	placeOption=getJson(searchWord);//単語をもとに検索候補をJSON形式で取得
 	createSuggestions(placeOption,"#dropdown");//取得した検索候補をもとにリストを作成
-	let firstOption = transform(placeOption.features[0].center);//第一検索候補の座標
+
+	let firstOption = ol.proj.transform((placeOption.features[0].center),"EPSG:4326", "EPSG:3857");//第一検索候補の座標
 	map.getView().setCenter(firstOption);//第一検索候補の座標に移動
+
 	event.stopPropagation();//たしか動作の一時停止的なコマンドだったと思う。これ入れないと次の行がうまく動かなかった
 	$('.dropdown-toggle').dropdown('toggle');//検索候補のリストを展開
+
 	return placeOption;
 }
 //現在位置を押したときに呼び出される関数
@@ -46,7 +44,7 @@ function setCurrentPosition(){
 		function(position){//現在位置取得が成功したら呼び出される
 			let lng = position.coords.longitude;
 			let lat = position.coords.latitude;
-			map.getView().setCenter(transform([lng,lat]));
+			map.getView().setCenter(ol.proj.transform([lng,lat],"EPSG:4326", "EPSG:3857"));
 			map.getView().setZoom(17);
 		},
 		function(position){//現在位置取得が失敗したら呼び出される
@@ -78,7 +76,7 @@ function checkCharType(input, charType) {
 	}
 }
 
-//全角なら半角に(数字以外受け付けないようにしたい)
+//全角なら半角に(TODO:数字以外受け付けないようにしたい)
 function zenkakuToHankaku(str){
 	if(checkCharType(str,"zenkaku")){
 		let num = str.replace(/[Ａ-Ｚａ-ｚ０-９]/g,
@@ -114,6 +112,7 @@ function layersSet(){
 	}
 }
 
+//道路の表示内容変更機能（自動）
 function mapboxAutoRoadStyle(feature){
 	let color = [0, 0, 0, 0];
 	let width = 0;
@@ -122,21 +121,21 @@ function mapboxAutoRoadStyle(feature){
 		//a.indexOf(b)はbが配列aの何番目に現れるかを返す。現れなかったら-1を返す。これを利用して要素が存在するかを確認できる。
 		if(["street","track","link","street_limited","service","path"].indexOf(feature.class)>=0){
 			color="black";
-			width=5;
+			width=4;
 			visibility="visible";
 		}
 	}
 	if(map.getView().getZoom()>=13){
 		if(["secondary","trunk","primary","tertiary"].indexOf(feature.class)>=0){
 			color="black";
-			width=5;
+			width=7;
 			visibility="visible";
 		}
 	}
 	if(map.getView().getZoom()>=5){
 		if(["motorway"].indexOf(feature.class)>=0){
 			color="black";
-			width=5;
+			width=10;
 			visibility="visible";
 		}
 	}
@@ -147,6 +146,7 @@ function mapboxAutoRoadStyle(feature){
 	};
 }
 
+//道路の表示内容変更機能（手動）
 function mapboxSelectRoadStyle(feature){
 	let color = [0, 0, 0, 0];
 	let width = 0;
@@ -166,59 +166,98 @@ function mapboxSelectRoadStyle(feature){
 	};
 }
 
+//マーカー機能
 function landmarkMarkerSet(coordinate){
+	//マーカーを表すオブジェクトを用意
 	let markerObject = new ol.Feature({
 		geometry: new ol.geom.Point(coordinate, 'XY'),
 	});
-	markerObject.setStyle(markerStyle);
+	//丸か点のスタイルをオブジェクトに適用
+	switch(Status.markerMode){
+		case "singleCircle":
+			markerObject.setStyle(singleCircleStyle);
+			break;
+		case "pointMarker":
+			markerObject.setStyle(pointMarkerStyle);
+			break;
+	};
+	//オブジェクトのプロパティにmarkerを設定
 	markerObject.setProperties({"object":"marker"});
+	//オブジェクトを配列markerにまとめる
 	marker.push(markerObject);
+	//配列markerをもとにしたデータソースを作成
 	let markerSource = new ol.source.Vector({
 		features: marker
 	});
+	//マーカー用のレイヤに登録
 	markerLayer.setSource(markerSource);
+	//更新
 	markerLayer.getSource().changed();
 }
 
+//点字機能
 function brailleMarkerSet(coordinate){
-	let brailleObject = new ol.Feature({
-		geometry: new ol.geom.Point(coordinate, 'XY'),
-	});
-	let brailleString=$("#tactile-text").val();
-	let stringStyle = new ol.style.Style();
-	let brailleSumiji=$("#tactile-sumiji").val();
-	let sumijiStyle = new ol.style.Style();
-	let text = new ol.style.Text({
-			fill: new ol.style.Fill({color: "black"}),
-			stroke: new ol.style.Stroke({color: "black", width: 1}),
+	//点字と墨字をテキストボックスから取得
+	let brailleText=$("#braille-text").val();
+	let brailleSumiji=$("#braille-sumiji").val();
+	//点字のスタイルを用意
+	let textStyle = new ol.style.Style({
+		text:new ol.style.Text({
+			fill: new ol.style.Fill({
+				color: "black"
+			}),
+			stroke: new ol.style.Stroke({
+				color: "black",
+				width: 1
+			}),
 			scale: 1.6,
 			textAlign: "center",
 			textBaseline: "top",
 			offsetY: 0,
-			text: brailleString,
+			text: brailleText,
 			font: "18px ikarashi",
-		});
-	let sumiji = new ol.style.Text({
-			fill: new ol.style.Fill({color: "#0066ff"}),
-			stroke: new ol.style.Stroke({color: "white", width: 1}),
+		}),
+	});
+	//墨字のスタイルを用意
+	let sumijiStyle = new ol.style.Style({
+		text:new ol.style.Text({
+			fill: new ol.style.Fill({
+				color: "#0066ff"
+			}),
+			stroke: new ol.style.Stroke({
+				color: "white",
+				width: 1
+			}),
 			scale: 1.6,
 			textAlign: "center",
 			textBaseline: "top",
-			offsetY: 25,
+			offsetY: 30,
 			text: brailleSumiji,
 			font:"16px sans-serif",
-		});
-	stringStyle.setText(text);
-	sumijiStyle.setText(sumiji);
-	brailleObject.setStyle([stringStyle,sumijiStyle]);
+		}),
+	});
+
+	//点字マーカーのオブジェクトを作成し、座標を登録
+	let brailleObject = new ol.Feature({
+		geometry: new ol.geom.Point(coordinate, 'XY'),
+	});
+	//オブジェクトにスタイルを適用
+	brailleObject.setStyle([textStyle,sumijiStyle]);
+	//オブジェクトにプロパティを設定
 	brailleObject.setProperties({"object":"braille"});
+	//オブジェクトを配列brailleにまとめる
 	braille.push(brailleObject);
+	//配列brailleをもとにデータソースを作成
 	let brailleSource = new ol.source.Vector({
 		features: braille
 	});
+	//レイヤにデータソースを登録
 	brailleLayer.setSource(brailleSource);
+	//更新
 	brailleLayer.getSource().changed();
 }
+
+//方向機能
 function directionMarkerSet(coordinate){
 	let directionMarkerCoordinates = [//北の矢印を一筆書き（XY座標で次に線を結ぶ点を指定する）
 		coordinate[0]   ,coordinate[1]   ,//（0,0）
@@ -228,47 +267,58 @@ function directionMarkerSet(coordinate){
 		coordinate[0]   ,coordinate[1]+75,//(0,75)
 		coordinate[0]+75,coordinate[1]   ,//(75,0)これを順に結ぶと矢印となる（75はズームレベル16で見やすいサイズとして決めた）
 	];
+	//一筆書きした方位記号を線として登録
 	let directionMarkerGeometry= new ol.geom.LineString(directionMarkerCoordinates,"XY");
+	//ズームレベルに合わせてサイズを調整
 	let scale=Math.pow(2,(16-map.getView().getZoom()));//ズームレベル16を基準にしたため16から引く（ズームレベル1減ると地図は2倍）
 	directionMarkerGeometry.scale(scale);//矢印の大きさをズームレベルに応じて大きくする
+	//方位記号のオブジェクトを作成
 	let directionMarkerObject = new ol.Feature({
 		geometry: directionMarkerGeometry
 	});
-	directionMarkerObject.setStyle(directionStyle);
+	//オブジェクトにプロパティを追加
 	directionMarkerObject.setProperties({"object":"direction"});
+	//配列directionに格納するが、すでにほかの方位記号オブジェクトがあったらすべて削除する
 	if(direction!=null){
 		direction=[];
 	}
 	direction.push(directionMarkerObject);
+	//方位記号オブジェクトをもとにデータソースを作成
 	let directionSource = new ol.source.Vector({
 		features: direction
 	});
+	//レイヤにデータソースを登録
 	directionLayer.setSource(directionSource);
+	//更新
 	directionLayer.getSource().changed();
 }
 
+//削除機能
 function deleteMarker(features){
-	if(!!features){
-		let feature=features[0];
-		console.log(feature);
+	if(!!features){//削除する対象が本当にあるならば
+		let feature=features[0];//そのうちの初めの１つのみを選択する
+		//削除するオブジェクトが
+		//触地図の地物なら
 		if(["Positions","Point","MultiPoint","LineString","MultiLineString","Polygon","MyltiPolygon"].indexOf(feature.type_)>=0){
-			let fid = feature.id_;
-			selection[fid] = feature;
+			let fid = feature.id_;//地物のidを取得
+			deleteObject[fid] = feature;//削除するオブジェクトがまとめられた配列deleteObjectに格納
+			//すべての触地図レイヤを更新
 			for(id in Layers.tactile.mapbox){
 				Layers.tactile.mapbox[id].setStyle(Layers.tactile.mapbox[id].getStyle());
 			}
 			return;
 		}
-
+		//マーカーなら
 		if(feature.values_.object==="marker"){
-			let markerId = feature.ol_uid;
+			let markerId = feature.ol_uid;//マーカー固有のidを取得
 			let deleteMarkerId;
-			for(key in marker){
-				if(marker[key].ol_uid===markerId){
-					deleteMarkerId=key;
+			for(key in marker){//表示しているマーカーの中で
+				if(marker[key].ol_uid===markerId){//削除したいマーカーがいたならば
+					deleteMarkerId=key;//表示しているマーカーのうち何番目なのかを控える
 				}
 			}
-			marker.splice(deleteMarkerId,1);
+			marker.splice(deleteMarkerId,1);//配列から削除するマーカーのみ削除
+			//削除後に残されたマーカーをデータソースとし更新
 			let markerSource = new ol.source.Vector({
 				features: marker
 			});
@@ -276,7 +326,7 @@ function deleteMarker(features){
 			markerLayer.getSource().changed();
 			return;
 		}
-
+		//方位記号なら(マーカーと挙動は一緒なので省略)
 		if(feature.values_.object==="direction"){
 			let directionId = feature.ol_uid;
 			let deleteDirectionId;
@@ -293,7 +343,7 @@ function deleteMarker(features){
 			directionLayer.getSource().changed();
 			return;
 		}
-
+		//点字記号なら（省略）
 		if(feature.values_.object==="braille"){
 			let brailleId = feature.ol_uid;
 			let deleteBrailleId;
@@ -310,8 +360,9 @@ function deleteMarker(features){
 			brailleLayer.getSource().changed();
 			return;
 		}
-
+		//線なら
 		if(feature.geometryName_==="drawLine"){
+			//ラインソースから削除し更新
 			lineSource.removeFeature(feature);
 			lineSource.changed();
 			return;
@@ -319,10 +370,12 @@ function deleteMarker(features){
 	}
 }
 
+//削除機能時にダブルクリックで復元する機能
 function redoSelectedFeature(){
-	let keys_array = Object.keys(selection);
-	let len =  keys_array.length;
-	delete selection[keys_array[len-1]];//連想配列の末尾を削除
+	let keys_array = Object.keys(deleteObject);//オブジェクトのキーだけを抽出した配列を作成
+	let len =  keys_array.length;//長さを取得
+	delete deleteObject[keys_array[len-1]];//連想配列の末尾を削除
+	//更新
 	for(id in Layers.tactile.mapbox){
 		Layers.tactile.mapbox[id].setStyle(Layers.tactile.mapbox[id].getStyle());
 	}

@@ -13,14 +13,6 @@ input[type=button] {
 input[type=radio] {
 	display: none; /* <LABEL>で枠全体に機能を持たせるためボタンを非表示 */
 }
-/*地図部分の設定*/
-#map {
-	background-color: #ffffff;
-}
-/*ダウンロード系の非表示*/
-#svg_export{
-	display: none;
-}
 /*目盛り用のcss-grid-container*/
 #grid-container{
 	display:grid;

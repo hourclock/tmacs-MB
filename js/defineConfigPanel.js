@@ -1,7 +1,6 @@
-//3. 設定パネル
+//設定パネル
 $(function(){//検索が押されたら候補用のドロップダウンを表示
 	let placeOption;//検索候補を格納
-	$("#addr").focus();
 	$('#search button[type=button]').on("click", function(event){//検索ボタンを押したとき
 		placeOption=setSearchPosition(event);
 	});
@@ -10,7 +9,7 @@ $(function(){//検索が押されたら候補用のドロップダウンを表�
 	});
 
 	$(document).on("click", "#dropdown li" ,function() {//検索候補をクリックしたとき
-		let selectedOptionCoordinate = transform(placeOption.features[$(this).val()].center);
+		let selectedOptionCoordinate = ol.proj.transform(placeOption.features[$(this).val()].center,"EPSG:4326", "EPSG:3857");
 		map.getView().setCenter(selectedOptionCoordinate);
 	});
 
@@ -19,57 +18,51 @@ $(function(){//検索が押されたら候補用のドロップダウンを表�
 	});
 });
 
-
-//3.1 END
-//3.2 背景地図
+//背景地図
 //背景地図の切り替え
 $(function() {
 	$('#basemap input[type=radio]').change( function() {
 		Status.back=this.value;
 		layersSet();
-		console.log("CHANGE BASE LAYER:"+this.value);
+		console.log("CHANGE BACK LAYER:"+this.value);
 	});
 });
-//3.2 END
-//3.3 背景地図の透過率
-// 背景地図の透過率
+
+//背景地図の透過率
 $("input[name='opacity']").TouchSpin({
 	min: 0,
 	max: 100,
 	step: 1,
+	postfix:"%",
 });
 $(function() {
-	$('#opacity_input').change(function() {
+	$("input[name='opacity']").change(function() {
 		let opacity =zenkakuToHankaku(this.value);
-		$('#opacity_input').val(opacity);
+		$("input[name='opacity']").val(opacity);
 		for(backID in Layers.back){
 			Layers.back[backID].setOpacity(this.value/100);
 		}
 
 	});
 });
-//3.3 END
-//3.4 触地図
+
+//触地図
 //触地図のon/off
 $(function() {
-	$('#tactile').change(function() {
+	$("input[name='tactile']").change(function() {
 		Status.tactile=( $(this).prop('checked') )?"mapbox":"none";
 		if(Status.tactile==="none"){
 			$(".tactileLayer").hide();
 		}else{
 			$(".tactileLayer").show();
 		}
-
-		// if(Status.tactile=="mapbox"){
-		// 	mapboxRoadLayer.getSource().changed();
-		// }
 		layersSet();
-		console.log("CHANGE BASE LAYER:"+this.value);
+		console.log("CHANGE TACTILE LAYER:"+this.value);
 	});
 });
-//3.4 END
-//3.5 レイヤ
-//触地図レイヤーのon/off(未完成)
+
+//レイヤ
+//触地図レイヤーのon/off
 $(function() {
 	$("#tactileLayer input").change(function(){
 		Status.switch[this.value]=( $(this).prop('checked') )?true:false;
@@ -94,8 +87,8 @@ $(function() {
 });
 //マルチセレクト機能の有効化・無効化
 $(function() {
-	$('.layerconfig').change(function(){
-		if($(".layerconfig").prop('checked')){
+	$('#layerConfig').change(function(){
+		if($("#layerConfig").prop('checked')){
 			$("#layer").multiselect("enable");
 		}else{
 			$("#layer").multiselect("disable");
@@ -113,9 +106,9 @@ $("input[name='rotate']").TouchSpin({
 	postfix:"度"
 });
 $(function() {
-	$('#rotate_input').change(function() {
+	$("input[name='rotate']").change(function() {
 		let degree=zenkakuToHankaku(this.value);
-		$("rotate_input").val(degree);
+		$("input[name='rotate']").val(degree);
 		map.getView().setRotation( degree * Math.PI / 180);
 	});
 });
@@ -127,9 +120,9 @@ $("input[name='scale']").TouchSpin({
 	decimals:1,
 });
 $(function() {
-	$('#scale_input').on("change",function() {
+	$("input[name='scale']").on("change",function() {
 		let zoom = zenkakuToHankaku(this.value);
-		$('#scale_input').val(zoom);
+		$("input[name='scale']").val(zoom);
 		map.getView().setZoom(zoom);
 	});
 });
@@ -142,12 +135,11 @@ $("input[name='mapscale']").TouchSpin({
 	prefix: '1/'
 });
 $(function() {
-	$('#mapScale_input').on("change",function() {
+	$("input[name='mapscale']").on("change",function() {
 		let zoom = zenkakuToHankaku(this.value);
-		$('#mapScale_input').val(zoom);
+		$("input[name='mapscale']").val(zoom);
 		let scale = Math.LOG2E * Math.log((96*39.37*156543.04*Math.cos(ol.proj.transform(map.getView().getCenter(),"EPSG:3857", "EPSG:4326")[1]*Math.PI/180))/zoom);
 		map.getView().setZoom(scale);
-		// $('#scale_input').val(scale);
 	});
 });
 //3.8 目盛り
@@ -167,19 +159,35 @@ $(function() {
 //目盛り変更
 $(function() {
 	$('#grid input[type=button]').change(function(){
-		function setFrame(state){
-			document.getElementById('top').style.borderBottom=state;
-			document.getElementById('left').style.borderRight=state;
-			document.getElementById('right').style.borderLeft=state;
-			document.getElementById('bottom').style.borderTop=state;
+		function setGridBorder(string){
+			document.getElementById('top').style.borderBottom=string;
+			document.getElementById('left').style.borderRight=string;
+			document.getElementById('right').style.borderLeft=string;
+			document.getElementById('bottom').style.borderTop=string;
 		}
-		if(this.value==="frame-on"){
-			setFrame("1mm solid #000000");
-		}else if(this.value==="frame-off"){
-			setFrame("");
-		}else{
-			$('#top,#bottom').css("background-size","calc(100%/"+String(Number(this.value)+1)+") 100%");
-			$('#left,#right').css("background-size","100% calc(100%/"+this.value+")");
+		function setGridCss(vertical,horizontal){
+			$('#top,#bottom').css("background-size","calc(100%/"+horizontal+") 100%");
+			$('#left,#right').css("background-size","100% calc(100%/"+vertical+")");
+		}
+		switch(this.value){
+			case "frame-on":
+				setGridBorder("1mm solid #000000");
+				break;
+			case "frame-off":
+				setGridBorder("");
+				break;
+			case "2×3":
+				setGridCss(2,3);
+				break;
+			case "3×4":
+				setGridCss(3,4);
+				break;
+			case "4×5":
+				setGridCss(4,5);
+				break;
+			case "5×6":
+				setGridCss(5,6);
+				break;
 		}
 	});
 });
@@ -189,42 +197,54 @@ $(function() {
 $(function() {
 	$('#edit').change(function() {//編集のON・OFF
 		if($(this).prop('checked')){
-			if(editMode==="line"){//もし直前の編集モードがラインだったら継続してラインになるように
+			$("#editOption").show();
+			if(Status.editMode==="line"){//もし前回の編集モードの最後がラインだったら
 				map.addInteraction(draw);
-			}else if(editMode==="braille"){
-				$("#tactile-text").show();
-				$("#tactile-sumiji").show();
+			}else if(Status.editMode==="braille"){
+				$("#braille-text").show();
+				$("#braille-sumiji").show();
+			}else if(Status.editMode==="marker"){
+				$("#markerOption").show();
 			}
-			$("#edit-contents").show();
 		}else{//それ以外ではラインモードを取り消しておく
-			$("#edit-contents").hide();
 			map.removeInteraction(draw);
-			$("#tactile-text").hide();
-			$("#tactile-sumiji").hide();
+			$("#editOption").hide();
+			$("#braille-text").hide();
+			$("#braille-sumiji").hide();
+			$("#markerOption").hide();
 		}
 	});
 
-	$('#edit-contents input[type=radio]').change(function() {//編集のボタンを押したとき動作
-		editMode=this.value;
-		if(editMode==="line"){
+	$('#editOption input[type=radio]').change(function() {//編集のボタンを押したとき動作
+		Status.editMode=this.value;
+		if(Status.editMode==="line"){
 			map.addInteraction(draw);
 		}else {
 			map.removeInteraction(draw);
 		}
-		if(editMode==="braille"){
-			$("#tactile-text").show();
-			$("#tactile-sumiji").show();
+		if(Status.editMode==="braille"){
+			$("#braille-text").show();
+			$("#braille-sumiji").show();
 		}else{
-			$("#tactile-text").hide();
-			$("#tactile-sumiji").hide();
-		}
+			$("#braille-text").hide();
+			$("#braille-sumiji").hide();
+		};
+		if(Status.editMode==="marker"){
+			$("#markerOption").show();
+		}else{
+			$("#markerOption").hide();
+		};
+	});
+
+	$("#markerOption input[type=radio]").change(function(){
+		Status.markerMode=this.value;
 	});
 });
 
 //編集機能（あとで関数か整理すること）
 map.on('dblclick', function(event) {//ダブルクリック（削除機能における戻る機能）
 	if($("#edit").prop("checked")){
-		if(editMode==="delete"){
+		if(Status.editMode==="delete"){
 			redoSelectedFeature();
 		}
 	}
@@ -234,14 +254,19 @@ map.on("singleclick",function(event){
 	if($("#edit").prop("checked")){//編集機能中のクリック
 		let features = map.getFeaturesAtPixel(event.pixel);
 		let coordinate=event.coordinate;
-		if(editMode==="marker"){
-			landmarkMarkerSet(coordinate);
-		}else if(editMode==="braille"){
-			brailleMarkerSet(coordinate);
-		}else if(editMode==="direction"){
-			directionMarkerSet(coordinate);
-		}else if(editMode==="delete"){
-			deleteMarker(features);
+		switch(Status.editMode){
+			case "marker":
+				landmarkMarkerSet(coordinate);
+				break;
+			case "braille":
+				brailleMarkerSet(coordinate);
+				break;
+			case "direction":
+				directionMarkerSet(coordinate);
+				break;
+			case "delete":
+				deleteMarker(features);
+				break;
 		}
 	}else{
 		let information = map.getFeaturesAtPixel(event.pixel);
@@ -258,24 +283,22 @@ $(function(){
 		//プリント
 		if( this.value === "print" ){
 			console.log("SAVE:PRINT");
-			let width = $("#grid-container").width();
-			let height = $("#grid-container").height();
-			let a4Height=172*92/25.4;
-			let a4Width=251*92/25.4;
-			$("#grid-container").height(a4Height);
-			$("#grid-container").width(width*a4Height/height);
 			window.print();
 		//PNG出力
 		}else if( this.value === "png" ){
 			map.render();
 			let canvas = map.renderer_.context_.canvas;//canvasを取得
+			let fileName="触地図";
+			if(!!$('#search input').val()){
+				fileName=$('#search input').val();
+			}
 			//ブラウザごとに保存動作
 			if (navigator.msSaveBlob) {
-				navigator.msSaveBlob(canvas.msToBlob(), 'map.png');
-			} else {
+				navigator.msSaveBlob(canvas.msToBlob(), fileName+'.png');
+			}else{
 				canvas.toBlob(
 					function(blob) {
-						saveAs(blob, 'map.png');
+						saveAs(blob, fileName+'.png');
 					}
 				);
 			}
