@@ -52,7 +52,7 @@ function setCurrentPosition(){
 		});
 }
 
-
+//文字列の種類を判定する関数（ネットの丸パクリ）
 function checkCharType(input, charType) {
 	switch (charType) {
 		case "zenkaku":// 全角文字（ひらがな・カタカナ・漢字 etc.）
@@ -114,18 +114,18 @@ function layersSet(){
 
 //道路の表示内容変更機能（自動）
 function mapboxAutoRoadStyle(feature){
-	let color = [0, 0, 0, 0];
-	let width = 0;
-	let visibility="invisible";
+	let color = [0, 0, 0, 0];//基本は道路の表示色は透明で
+	let width = 0;//太さは0
+	let visibility="invisible";//この状態をinvisibleとする
 	if(map.getView().getZoom()>=16){
 		//a.indexOf(b)はbが配列aの何番目に現れるかを返す。現れなかったら-1を返す。これを利用して要素が存在するかを確認できる。
-		if(["street","track","link","street_limited","service","path"].indexOf(feature.class)>=0){
+		if(["street","track","link","street_limited","service","path"].indexOf(feature.class)>=0){//もしこれらのタグがあるならば
 			color="black";
 			width=4;
 			visibility="visible";
-		}
+		}//色を黒、太さ４、状態visibleとして設定しなおす
 	}
-	if(map.getView().getZoom()>=13){
+	if(map.getView().getZoom()>=13){//以下略
 		if(["secondary","trunk","primary","tertiary"].indexOf(feature.class)>=0){
 			color="black";
 			width=7;
@@ -139,7 +139,7 @@ function mapboxAutoRoadStyle(feature){
 			visibility="visible";
 		}
 	}
-	return {
+	return {//色、太さ、可視・不可視の状態を返す
 		color:color,
 		width:width,
 		visibility:visibility
@@ -153,7 +153,7 @@ function mapboxSelectRoadStyle(feature){
 	let visibility="invisible";
 	let select=$("#layer").val();//設定パネルの表示内容（道路）のセレクトボックスの値。選択したものが配列で取得できる
 	for(value in select){
-		if(feature.class===select[value]){
+		if(feature.class===select[value]){//セレクトボックス内の値が存在すれば
 			color="black";
 			width=5;
 			visibility="visible";
@@ -270,8 +270,8 @@ function directionMarkerSet(coordinate){
 	//一筆書きした方位記号を線として登録
 	let directionMarkerGeometry= new ol.geom.LineString(directionMarkerCoordinates,"XY");
 	//ズームレベルに合わせてサイズを調整
-	let scale=Math.pow(2,(16-map.getView().getZoom()));//ズームレベル16を基準にしたため16から引く（ズームレベル1減ると地図は2倍）
-	directionMarkerGeometry.scale(scale);//矢印の大きさをズームレベルに応じて大きくする
+	let zoomScale=Math.pow(2,(16-map.getView().getZoom()));//ズームレベル16を基準にしたため16から引く（ズームレベル1減ると地図は2倍）
+	directionMarkerGeometry.scale(zoomScale);//矢印の大きさをズームレベルに応じて大きくする
 	//方位記号のオブジェクトを作成
 	let directionMarkerObject = new ol.Feature({
 		geometry: directionMarkerGeometry

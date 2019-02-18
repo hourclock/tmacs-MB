@@ -37,8 +37,10 @@ $("input[name='opacity']").TouchSpin({
 });
 $(function() {
 	$("input[name='opacity']").change(function() {
+		//入力されている値を半角に
 		let opacity =zenkakuToHankaku(this.value);
 		$("input[name='opacity']").val(opacity);
+		//すべての背景地図レイヤに透過率を適用
 		for(backID in Layers.back){
 			Layers.back[backID].setOpacity(this.value/100);
 		}
@@ -50,7 +52,7 @@ $(function() {
 //触地図のon/off
 $(function() {
 	$("input[name='tactile']").change(function() {
-		Status.tactile=( $(this).prop('checked') )?"mapbox":"none";
+		Status.tactile=( $(this).prop('checked') )?"mapbox":"none";//もし触地図がONなら"mapbox"をOFFなら"none"を代入
 		if(Status.tactile==="none"){
 			$(".tactileLayer").hide();
 		}else{
@@ -65,7 +67,7 @@ $(function() {
 //触地図レイヤーのon/off
 $(function() {
 	$("#tactileLayer input").change(function(){
-		Status.switch[this.value]=( $(this).prop('checked') )?true:false;
+		Status.switch[this.value]=($(this).prop('checked'))?true:false;
 		if(this.value==="road"){
 			if($(this).prop('checked')){
 				$(".roadContents").show();
@@ -80,9 +82,7 @@ $(function() {
 //道路表示内容選択機能
 $(function() {
 	$('#layer').change(function(){
-		if(Status.tactile==="mapbox"){
-			mapboxRoadLayer.getSource().changed();
-		}
+		mapboxRoadLayer.getSource().changed();
 	});
 });
 //マルチセレクト機能の有効化・無効化
@@ -115,29 +115,30 @@ $(function() {
 //3.6 END
 //3.7 ズームレベル
 // ズームレベルの切り替え
-$("input[name='scale']").TouchSpin({
+$("input[name='zoomLevel']").TouchSpin({
 	step: 0.1,
 	decimals:1,
 });
 $(function() {
-	$("input[name='scale']").on("change",function() {
+	$("input[name='zoomLevel']").on("change",function() {
 		let zoom = zenkakuToHankaku(this.value);
-		$("input[name='scale']").val(zoom);
+		$("input[name='zoomLevel']").val(zoom);
 		map.getView().setZoom(zoom);
 	});
 });
 //3.7 END
 // 縮尺の切り替え
-$("input[name='mapscale']").TouchSpin({
-	max:500000000,
+$("input[name='scale']").TouchSpin({
+	max:500000000,//最大値設定しないと挙動が変だったから大きめの数値を設定
 	step: 10,
 	decimals:1,
 	prefix: '1/'
 });
 $(function() {
-	$("input[name='mapscale']").on("change",function() {
+	$("input[name='scale']").on("change",function() {
 		let zoom = zenkakuToHankaku(this.value);
-		$("input[name='mapscale']").val(zoom);
+		$("input[name='scale']").val(zoom);
+		//"https://blogs.bing.com/maps/2006/02/25/map-control-zoom-levels-gt-resolution/"をもとに緯度とズームレベルから縮尺を算出
 		let scale = Math.LOG2E * Math.log((96*39.37*156543.04*Math.cos(ol.proj.transform(map.getView().getCenter(),"EPSG:3857", "EPSG:4326")[1]*Math.PI/180))/zoom);
 		map.getView().setZoom(scale);
 	});
@@ -159,13 +160,13 @@ $(function() {
 //目盛り変更
 $(function() {
 	$('#grid input[type=button]').change(function(){
-		function setGridBorder(string){
+		function setGridBorder(string){//要素の端に線を引く
 			document.getElementById('top').style.borderBottom=string;
 			document.getElementById('left').style.borderRight=string;
 			document.getElementById('right').style.borderLeft=string;
 			document.getElementById('bottom').style.borderTop=string;
 		}
-		function setGridCss(vertical,horizontal){
+		function setGridCss(vertical,horizontal){//等間隔にグラデーションを付ける
 			$('#top,#bottom').css("background-size","calc(100%/"+horizontal+") 100%");
 			$('#left,#right').css("background-size","100% calc(100%/"+vertical+")");
 		}
@@ -193,20 +194,20 @@ $(function() {
 });
 //3.8 END
 
-
+//編集機能
 $(function() {
 	$('#edit').change(function() {//編集のON・OFF
-		if($(this).prop('checked')){
+		if($(this).prop('checked')){//編集機能がONのとき
 			$("#editOption").show();
 			if(Status.editMode==="line"){//もし前回の編集モードの最後がラインだったら
-				map.addInteraction(draw);
+				map.addInteraction(draw);//ライン機能を起動
 			}else if(Status.editMode==="braille"){
 				$("#braille-text").show();
 				$("#braille-sumiji").show();
 			}else if(Status.editMode==="marker"){
 				$("#markerOption").show();
 			}
-		}else{//それ以外ではラインモードを取り消しておく
+		}else{//編集機能OFFではすべての機能を非表示・停止させておく
 			map.removeInteraction(draw);
 			$("#editOption").hide();
 			$("#braille-text").hide();
@@ -228,20 +229,19 @@ $(function() {
 		}else{
 			$("#braille-text").hide();
 			$("#braille-sumiji").hide();
-		};
+		}
 		if(Status.editMode==="marker"){
 			$("#markerOption").show();
 		}else{
 			$("#markerOption").hide();
-		};
+		}
 	});
 
-	$("#markerOption input[type=radio]").change(function(){
+	$("#markerOption input[type=radio]").change(function(){//マーカー機能で選んだマーカーの種類を格納しておく
 		Status.markerMode=this.value;
 	});
 });
 
-//編集機能（あとで関数か整理すること）
 map.on('dblclick', function(event) {//ダブルクリック（削除機能における戻る機能）
 	if($("#edit").prop("checked")){
 		if(Status.editMode==="delete"){
@@ -251,7 +251,7 @@ map.on('dblclick', function(event) {//ダブルクリック（削除機能にお
 });
 
 map.on("singleclick",function(event){
-	if($("#edit").prop("checked")){//編集機能中のクリック
+	if($("#edit").prop("checked")){//編集機能中のクリックなら
 		let features = map.getFeaturesAtPixel(event.pixel);
 		let coordinate=event.coordinate;
 		switch(Status.editMode){
@@ -268,7 +268,7 @@ map.on("singleclick",function(event){
 				deleteMarker(features);
 				break;
 		}
-	}else{
+	}else{//編集機能中以外のクリックなら
 		let information = map.getFeaturesAtPixel(event.pixel);
 		if(information!=null){
 			console.log(information[0]);
@@ -289,8 +289,8 @@ $(function(){
 			map.render();
 			let canvas = map.renderer_.context_.canvas;//canvasを取得
 			let fileName="触地図";
-			if(!!$('#search input').val()){
-				fileName=$('#search input').val();
+			if(!!$('#search input').val()){//検索用テキストボックスに何かが入力されているならば
+				fileName=$('#search input').val();//ファイルネーム用に取得
 			}
 			//ブラウザごとに保存動作
 			if (navigator.msSaveBlob) {

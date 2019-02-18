@@ -128,24 +128,13 @@ let mapboxRiverLayer = new ol.layer.VectorTile({
 		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/{z}/{x}/{y}.vector.pbf?access_token=' + mapboxApiKey,
 	}),
 	renderMode:"image",
-	style:function(feature,resolution){
-		let color=[0, 0, 0, 0];
-		let width=0;
-		if(map.getView().getZoom()>=16&&feature.properties_.layer==="water"){
-			color="black";
-			width=5;
-		}
-		let invisibleObject = !!deleteObject[feature.id_];
-		return[new ol.style.Style({
-			stroke: new ol.style.Stroke({
-				color: invisibleObject?[0, 0, 0, 0]:color,
-				width: width,
-				lineCap: "round",
-				lineDash:[10,20,0,20],
-			}),
-		})];
-	}
+	style:new ol.style.Style({
+		fill: new ol.style.Fill({
+			color: "blue"
+		})
+	})
 });
+
 
 
 let mapboxBuildingLayer = new ol.layer.VectorTile({
@@ -317,15 +306,12 @@ let pointMarkerStyle = [
 	}),
 ];
 
-
-
-
 let markerLayer = new ol.layer.Vector();
 
 //編集:点字
 let brailleLayer = new ol.layer.Vector();
 
-//編集:方向
+//編集:方位記号
 let directionLayer = new ol.layer.Vector({
 	style: new ol.style.Style({
 		stroke: new ol.style.Stroke({
@@ -334,9 +320,3 @@ let directionLayer = new ol.layer.Vector({
 		}),
 	}),
 });
-// let directionStyle = new ol.style.Style({
-// 	stroke: new ol.style.Stroke({
-// 		color: 'black',
-// 		width: 5
-// 	}),
-// });
