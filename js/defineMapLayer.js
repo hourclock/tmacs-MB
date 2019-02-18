@@ -130,7 +130,7 @@ let mapboxRiverLayer = new ol.layer.VectorTile({
 	renderMode:"image",
 	style:new ol.style.Style({
 		fill: new ol.style.Fill({
-			color: "blue"
+			color: "aqua"
 		})
 	})
 });
