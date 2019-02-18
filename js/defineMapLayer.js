@@ -128,11 +128,26 @@ let mapboxRiverLayer = new ol.layer.VectorTile({
 		url: 'https://{a-d}.tiles.mapbox.com/v4/mapbox.mapbox-streets-v7/{z}/{x}/{y}.vector.pbf?access_token=' + mapboxApiKey,
 	}),
 	renderMode:"image",
-	style:new ol.style.Style({
-		fill: new ol.style.Fill({
-			color: "aqua"
-		})
-	})
+	style:function(feature,resolution){
+		let color=[0, 0, 0, 0];
+		let width=0;
+		if(map.getView().getZoom()>=16&&feature.properties_.layer==="water"){
+			color="black";
+			width=5;
+		}
+		let invisibleObject = !!deleteObject[feature.id_];
+		return[new ol.style.Style({
+			stroke: new ol.style.Stroke({
+				color: invisibleObject?[0, 0, 0, 0]:color,
+				width: width,
+				lineCap: "round",
+				lineDash:[10,20,0,20],
+			}),
+			fill: new ol.style.Fill({
+				color:"gray"
+			})
+		})];
+	}
 });
 
 
@@ -183,7 +198,7 @@ let mapboxCoastlineLayer = new ol.layer.VectorTile({
 				color: invisibleObject?[0, 0, 0, 0]:color,
 				width: width,
 				lineCap: "square",
-			})
+			}),
 		})];
 	}
 });

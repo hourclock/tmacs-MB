@@ -132,26 +132,25 @@ layersSet();
 //初回読み込み時に地図が画面の上部ピッタリに表示されるように。説明文とかロゴより地図自体が大事
 $(window).scrollTop($("#main").offset().top);
 
-//河川の点での塗りつぶし用のパターン作成
-let img = new Image();//新しく画像要素を作成
-//画像要素にsvg形式の点の画像を記述
-// img.src = 'data:image/svg+xml;charset=utf-8,'+
-// 			'<svg width="20px" height="20px" viewBox="0 0 20 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">'+
-// 				'<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">'+
-// 					'<g fill="#000000">'+
-// 						'<circle id="Oval-377-Copy-9" cx="3" cy="3" r="3"></circle>'+
-// 						'<circle id="Oval-377-Copy-14" cx="13" cy="13" r="3"></circle>'+
-// 					'</g>'+
-// 				'</g>'+
-// 			'</svg>';
+let cnv = document.createElement('canvas');
+let ctx = cnv.getContext('2d');
+let img = new Image();
+img.src = 'data:image/svg+xml;charset=utf-8,'+
+			'<svg width="20px" height="20px" viewBox="0 0 20 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">'+
+				'<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">'+
+					'<g fill="#000000">'+
+						'<circle id="Oval-377-Copy-9" cx="3" cy="3" r="3"></circle>'+
+						'<circle id="Oval-377-Copy-14" cx="13" cy="13" r="3"></circle>'+
+					'</g>'+
+				'</g>'+
+			'</svg>';
 
-img.src="https://github.com/hourclock/tmacs-MB/tree/gh-pages/images/pattern.svg";
+
 img.onload = function(){
-	let cnv = document.createElement('canvas');//canvas要素を準備
-	let ctx = cnv.getContext('2d');//canvasは平面画像として扱うと設定
-	mapboxRiverLayer.setStyle(new ol.style.Style({
-		fill: new ol.style.Fill({
-			color: ctx.createPattern(img, 'repeat')
-		})
-	}));
+  let pattern = ctx.createPattern(img, 'repeat');
+  mapboxRiverLayer.setStyle(new ol.style.Style({
+    fill: new ol.style.Fill({
+      color: pattern
+    })
+  }));
 };
