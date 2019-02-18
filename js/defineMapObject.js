@@ -145,7 +145,7 @@ let img = new Image();//新しく画像要素を作成
 // 				'</g>'+
 // 			'</svg>';
 
-img.src="https://github.com/hourclock/tmacs-MB/tree/master/images/pattern.svg";
+img.src="https://github.com/hourclock/tmacs-MB/tree//images/pattern.svg";
 img.onload = function(){
 	let cnv = document.createElement('canvas');//canvas要素を準備
 	let ctx = cnv.getContext('2d');//canvasは平面画像として扱うと設定
